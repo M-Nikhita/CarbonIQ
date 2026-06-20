@@ -1005,6 +1005,235 @@ input[type="range"]::-webkit-slider-thumb:hover {
   box-shadow: 0 0 15px var(--primary-glow);
 }
 
+/* Live Carbon Odometer Ticker Styles */
+.live-odometer-box {
+  background: rgba(8, 12, 20, 0.6);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  margin-top: 1rem;
+  border-left: 4px solid var(--primary);
+  text-align: left;
+}
+
+.odometer-title {
+  font-size: 0.725rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+.odometer-digits {
+  font-family: 'Outfit', monospace;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.01em;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
+  line-height: 1.1;
+}
+
+.odometer-digits span.odometer-unit-badge {
+  font-size: 0.95rem;
+  color: var(--primary);
+  font-weight: 700;
+  margin-left: 0.35rem;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 10px var(--primary-glow);
+}
+
+.odometer-footer {
+  font-size: 0.775rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  box-shadow: 0 0 10px var(--primary);
+  animation: pulse-ring 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+/* Blueprint SVG Map & Interactive Hotspot Scanner Styles */
+.blueprint-scanner {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+  width: 100%;
+}
+
+.blueprint-map {
+  background: rgba(10, 16, 28, 0.45);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: var(--shadow-premium);
+  position: relative;
+  overflow: hidden;
+}
+
+.blueprint-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Radar Pulse Animations */
+.radar-group {
+  transition: transform 0.2s ease;
+}
+
+.radar-group:hover {
+  transform: scale(1.08);
+}
+
+.radar-group .radar-ring {
+  stroke-dasharray: 2, 2;
+  transform-origin: center;
+  animation: rotate-radar 12s linear infinite;
+}
+
+.radar-group .radar-core {
+  transform-origin: center;
+  animation: pulse-core 2s ease-in-out infinite;
+}
+
+.radar-group.active .radar-core {
+  fill: #fff !important;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.radar-group.active .radar-ring {
+  stroke: #fff !important;
+  stroke-width: 1.5px;
+  animation: rotate-radar-fast 4s linear infinite;
+}
+
+.radar-label {
+  font-family: var(--font-heading);
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  fill: var(--text-muted);
+  opacity: 0.65;
+  transition: var(--transition-smooth);
+}
+
+.radar-group:hover .radar-label,
+.radar-group.active .radar-label {
+  fill: #fff;
+  opacity: 1;
+}
+
+@keyframes rotate-radar {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rotate-radar-fast {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes pulse-core {
+  0%, 100% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+/* SVG Line flows */
+.flowing-line-transport {
+  animation: stroke-flow 1.5s linear infinite;
+}
+
+.flowing-line-energy {
+  animation: stroke-flow 2s linear infinite;
+}
+
+@keyframes stroke-flow {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+/* Telemetry detail panel */
+.scanner-glass-panel {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid var(--border-glass);
+  border-left-width: 4px;
+  border-radius: 12px;
+  padding: 1.25rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  text-align: left;
+  animation: slideUpFade 0.25s ease-out forwards;
+}
+
+.scanner-glass-panel h4 {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0.5rem 0 0.25rem 0;
+}
+
+.panel-badge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badge-pill {
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.telemetry-txt {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.scanner-desc {
+  font-size: 0.825rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.scanner-desc strong {
+  color: #fff;
+}
+
 .welcome-card-wrapper {
   display: flex;
   align-items: center;

@@ -43,11 +43,24 @@ function App() {
   const [appState, setAppState] = useState('welcome'); // 'welcome' | 'dashboard'
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' | 'comparator' | 'history' | 'assistant'
 
-  // Interactive landing page Carbon IQ Trivia states
-  const [triviaStep, setTriviaStep] = useState(0); // 0: intro, 1: Q1, 2: Q2, 3: Q3, 4: results
+  // Interactive landing page Carbon IQ Trivia states (moved inside dashboard)
+  const [triviaStep, setTriviaStep] = useState(0);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [triviaScore, setTriviaScore] = useState(0);
+
+  // Expanded Dashboard Trivia states
+  const [activeTriviaQuestions, setActiveTriviaQuestions] = useState([]);
+  const [currentTriviaIndex, setCurrentTriviaIndex] = useState(0);
+  const [dashboardTriviaScore, setDashboardTriviaScore] = useState(0);
+  const [dashboardTriviaState, setDashboardTriviaState] = useState('intro');
+  const [selectedAnswerIdx, setSelectedAnswerIdx] = useState(null);
+  const [isQAnswered, setIsQAnswered] = useState(false);
+
+  // Landing page interactive carbon telemetry and hotspot scanner
+  const [activeHotspot, setActiveHotspot] = useState('commute');
+  const [globalEmissions, setGlobalEmissions] = useState(0);
+
 
   // Sessions and History data
   const [sessions, setSessions] = useState([]);
@@ -82,6 +95,35 @@ function App() {
       userIdRef.current = savedUser;
     }
   }, []);
+
+  // Background carbon emissions odometer ticker (global live telemetry)
+  useEffect(() => {
+    const now = new Date();
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const msSinceMidnight = now.getTime() - midnight.getTime();
+    // Global emissions average roughly 37 billion tons per year, which is ~1,170,000 kg per second
+    const initialVal = (msSinceMidnight / 1000) * 1170000;
+    setGlobalEmissions(initialVal);
+
+    const interval = setInterval(() => {
+      setGlobalEmissions(prev => prev + 11.7); // 1,170,000 kg/sec -> 11.7 kg every 10ms
+    }, 10);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleStartTriviaView = () => {
+    const shuffled = [...triviaQuestions].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 5);
+    setActiveTriviaQuestions(selected);
+    setCurrentTriviaIndex(0);
+    setDashboardTriviaScore(0);
+    setSelectedAnswerIdx(null);
+    setIsQAnswered(false);
+    setDashboardTriviaState('intro');
+    setCurrentView('trivia');
+  };
+
 
   const addMessage = (role, text) => {
     setMessages(prev => [
@@ -294,141 +336,144 @@ Please write a short, friendly response answering their question. (Maximum 3 sen
           <div className="welcome-hero">
             <div className="welcome-hero-content">
               <h1 className="welcome-logo">Carbon<span>IQ</span></h1>
-              
-              {/* Carbon IQ Trivia Widget */}
-              <div className="trivia-widget">
-                {triviaStep === 0 && (
-                  <div className="trivia-step-container trivia-intro">
-                    <span className="trivia-badge">LANDING EXCLUSIVE GAME</span>
-                    <h2>Test Your Carbon IQ! 🧠</h2>
-                    <p className="welcome-tagline" style={{ marginTop: '0.5rem', marginBottom: '1.5rem', fontSize: '1.05rem' }}>
-                      How deep is your climate intelligence? Challenge yourself with our quick 3-question Carbon IQ trivia game before setting up your personal tracker dashboard.
-                    </p>
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-start-quiz"
-                      onClick={() => {
-                        setTriviaStep(1);
-                        setTriviaScore(0);
-                        setSelectedOptionIndex(null);
-                        setIsAnswered(false);
-                      }}
+              <p className="welcome-tagline">
+                Your premium carbon intelligence gateway. Explore global emissions live and scan the interactive carbon hotspot map below to trace emission sources.
+              </p>
+
+              {/* Real-time Global Carbon Odometer Ticker */}
+              <div className="live-odometer-box" aria-live="polite">
+                <div className="odometer-title">GLOBAL EMISSIONS DETECTED TODAY</div>
+                <div className="odometer-digits">
+                  {globalEmissions.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="odometer-unit-badge">KG CO2e</span>
+                </div>
+                <div className="odometer-footer">
+                  <span className="live-dot" aria-hidden="true"></span> Telemetry ticking in real-time at ~1,170,000 kg / second worldwide.
+                </div>
+              </div>
+
+              {/* Interactive Futuristic SVG blueprint and Hotspot Scanner */}
+              <div className="blueprint-scanner">
+                <div className="blueprint-map">
+                  <svg viewBox="0 0 500 230" className="blueprint-svg">
+                    {/* Grid Pattern Background */}
+                    <defs>
+                      <pattern id="blueprint-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255, 255, 255, 0.02)" strokeWidth="1" />
+                      </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#blueprint-grid)" />
+                    
+                    {/* Glowing schematic paths */}
+                    <path d="M 40 120 Q 200 30 380 180" fill="none" stroke="rgba(251, 191, 36, 0.08)" strokeWidth="3" />
+                    <path d="M 40 120 Q 200 30 380 180" fill="none" stroke="var(--color-transport)" strokeWidth="1.5" strokeDasharray="6,4" className="flowing-line-transport" />
+
+                    <path d="M 120 220 L 250 130 L 420 50" fill="none" stroke="rgba(59, 130, 246, 0.08)" strokeWidth="3" />
+                    <path d="M 120 220 L 250 130 L 420 50" fill="none" stroke="var(--color-energy)" strokeWidth="1.5" strokeDasharray="8,6" className="flowing-line-energy" />
+
+                    {/* Vector Outlines */}
+                    {/* Home Structure */}
+                    <path d="M 230 115 L 250 95 L 270 115 L 270 145 L 230 145 Z" fill="none" stroke="rgba(255, 255, 255, 0.06)" strokeWidth="1.5" />
+                    {/* Power Grid Tower */}
+                    <rect x="395" y="35" width="30" height="30" fill="none" stroke="rgba(255, 255, 255, 0.06)" strokeWidth="1.5" />
+                    <line x1="395" y1="65" x2="425" y2="35" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" />
+                    {/* Farm Fields */}
+                    <circle cx="80" cy="170" r="22" fill="none" stroke="rgba(255, 255, 255, 0.06)" strokeWidth="1.5" />
+                    <line x1="80" y1="148" x2="80" y2="192" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" />
+                    <line x1="58" y1="170" x2="102" y2="170" stroke="rgba(255, 255, 255, 0.04)" strokeWidth="1" />
+
+                    {/* Interactive Radar Hotspots */}
+                    {/* Commute Radar */}
+                    <g 
+                      className={`radar-group ${activeHotspot === 'commute' ? 'active' : ''}`}
+                      onClick={() => setActiveHotspot('commute')}
                     >
-                      Start Carbon IQ Challenge 🚀
-                    </button>
+                      <circle cx="210" cy="75" r="16" className="radar-ring" fill="none" />
+                      <circle cx="210" cy="75" r="5" className="radar-core" />
+                      <text x="210" y="60" className="radar-label" textAnchor="middle">COMMUTE</text>
+                    </g>
+
+                    {/* Home Utilities Radar */}
+                    <g 
+                      className={`radar-group ${activeHotspot === 'energy' ? 'active' : ''}`}
+                      onClick={() => setActiveHotspot('energy')}
+                    >
+                      <circle cx="250" cy="130" r="16" className="radar-ring" fill="none" />
+                      <circle cx="250" cy="130" r="5" className="radar-core" />
+                      <text x="250" y="158" className="radar-label" textAnchor="middle">UTILITY</text>
+                    </g>
+
+                    {/* Diet Radar */}
+                    <g 
+                      className={`radar-group ${activeHotspot === 'diet' ? 'active' : ''}`}
+                      onClick={() => setActiveHotspot('diet')}
+                    >
+                      <circle cx="80" cy="170" r="16" className="radar-ring" fill="none" />
+                      <circle cx="80" cy="170" r="5" className="radar-core" />
+                      <text x="80" y="145" className="radar-label" textAnchor="middle">DIET</text>
+                    </g>
+
+                    {/* Aviation Radar */}
+                    <g 
+                      className={`radar-group ${activeHotspot === 'aviation' ? 'active' : ''}`}
+                      onClick={() => setActiveHotspot('aviation')}
+                    >
+                      <circle cx="340" cy="150" r="16" className="radar-ring" fill="none" />
+                      <circle cx="340" cy="150" r="5" className="radar-core" />
+                      <text x="340" y="135" className="radar-label" textAnchor="middle">FLIGHTS</text>
+                    </g>
+                  </svg>
+                </div>
+
+                {/* Hotspot details glass panel */}
+                {activeHotspot === 'commute' && (
+                  <div className="scanner-glass-panel" style={{ borderLeftColor: 'var(--color-transport)' }}>
+                    <div className="panel-badge-row">
+                      <span className="badge-pill" style={{ backgroundColor: 'rgba(251, 191, 36, 0.15)', color: 'var(--color-transport)' }}>TRANSPORT SYSTEM SCAN</span>
+                      <span className="telemetry-txt">SIGNAL: ACTIVE</span>
+                    </div>
+                    <h4>Commuter Emissions Telemetry</h4>
+                    <p className="scanner-desc">
+                      Gasoline commutes emit ~<strong>171g CO2e/km</strong>. Switching to rail or light rail subway reduces your passenger impact by <strong>85% per kilometer</strong>.
+                    </p>
                   </div>
                 )}
 
-                {triviaStep >= 1 && triviaStep <= 3 && (() => {
-                  const currentQ = triviaQuestions[triviaStep - 1];
-                  return (
-                    <div className="trivia-step-container">
-                      <div className="trivia-progress-bar">
-                        <div className="progress-label">Question {triviaStep} of 3</div>
-                        <div className="progress-track">
-                          <div className="progress-fill" style={{ width: `${(triviaStep / 3) * 100}%` }}></div>
-                        </div>
-                      </div>
-                      
-                      <h3 className="trivia-question-text">{currentQ.q}</h3>
-                      
-                      <div className="trivia-options-grid">
-                        {currentQ.options.map((opt, idx) => {
-                          let btnClass = 'trivia-option-btn';
-                          if (isAnswered) {
-                            if (opt.correct) {
-                              btnClass += ' correct';
-                            } else if (idx === selectedOptionIndex) {
-                              btnClass += ' incorrect';
-                            } else {
-                              btnClass += ' disabled';
-                            }
-                          } else if (idx === selectedOptionIndex) {
-                            btnClass += ' selected';
-                          }
-
-                          return (
-                            <button
-                              key={idx}
-                              type="button"
-                              className={btnClass}
-                              disabled={isAnswered}
-                              onClick={() => {
-                                setSelectedOptionIndex(idx);
-                                setIsAnswered(true);
-                                if (opt.correct) {
-                                  setTriviaScore(prev => prev + 1);
-                                }
-                              }}
-                            >
-                              <span className="option-text">{opt.text}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {isAnswered && (
-                        <div className="trivia-explanation-box">
-                          <div className="explanation-title">
-                            {currentQ.options[selectedOptionIndex]?.correct ? '🎉 Correct Answer!' : '❌ Incorrect Answer'}
-                          </div>
-                          <p className="explanation-content">
-                            {currentQ.options[selectedOptionIndex]?.explanation || currentQ.options.find(o => o.correct).explanation}
-                          </p>
-                          <button
-                            type="button"
-                            className="btn btn-primary"
-                            style={{ alignSelf: 'flex-end', marginTop: '0.75rem', padding: '0.5rem 1.25rem' }}
-                            onClick={() => {
-                              setSelectedOptionIndex(null);
-                              setIsAnswered(false);
-                              setTriviaStep(prev => prev + 1);
-                            }}
-                          >
-                            {triviaStep === 3 ? 'Finish & See Score →' : 'Next Question →'}
-                          </button>
-                        </div>
-                      )}
+                {activeHotspot === 'energy' && (
+                  <div className="scanner-glass-panel" style={{ borderLeftColor: 'var(--color-energy)' }}>
+                    <div className="panel-badge-row">
+                      <span className="badge-pill" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)', color: 'var(--color-energy)' }}>UTILITY SYSTEMS SCAN</span>
+                      <span className="telemetry-txt">SIGNAL: ACTIVE</span>
                     </div>
-                  );
-                })()}
-
-                {triviaStep === 4 && (
-                  <div className="trivia-step-container trivia-results-step">
-                    <span className="trivia-badge">CHALLENGE COMPLETE</span>
-                    <h2>Your Carbon IQ Results</h2>
-                    
-                    <div className="score-ring-wrapper">
-                      <div className="score-ring">
-                        <span className="score-value">{triviaScore} / 3</span>
-                        <span className="score-label">Correct</span>
-                      </div>
-                    </div>
-
-                    <div className="score-rank-badge">
-                      {triviaScore === 3 && '🏆 Carbon Genius'}
-                      {triviaScore === 2 && '🌳 Eco Champion'}
-                      {triviaScore <= 1 && '🌱 Climate Explorer'}
-                    </div>
-
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', margin: '1rem 0' }}>
-                      {triviaScore === 3 && 'Perfect score! You possess elite carbon intelligence. You are fully ready to optimize your lifestyle footprint.'}
-                      {triviaScore === 2 && 'Great job! You have solid baseline awareness of footprint magnitudes. Build your full profile to find final reductions.'}
-                      {triviaScore <= 1 && 'Every climate journey starts here. Establishing your baseline metrics in the dashboard will help double your Carbon IQ.'}
+                    <h4>Residential Energy Grid Telemetry</h4>
+                    <p className="scanner-desc">
+                      Standard grids produce <strong>0.4kg CO2e/kWh</strong>. Sourcing power from 100% certified solar or wind contracts offsets up to <strong>92% of electrical footprint</strong>.
                     </p>
+                  </div>
+                )}
 
-                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => {
-                          setTriviaStep(0);
-                          setTriviaScore(0);
-                        }}
-                      >
-                        🔄 Retake Quiz
-                      </button>
+                {activeHotspot === 'diet' && (
+                  <div className="scanner-glass-panel" style={{ borderLeftColor: 'var(--color-food)' }}>
+                    <div className="panel-badge-row">
+                      <span className="badge-pill" style={{ backgroundColor: 'rgba(249, 115, 22, 0.15)', color: 'var(--color-food)' }}>AGRICULTURE GRID SCAN</span>
+                      <span className="telemetry-txt">SIGNAL: ACTIVE</span>
                     </div>
+                    <h4>Dietary Footprint Telemetry</h4>
+                    <p className="scanner-desc">
+                      Beef production generates <strong>60kg CO2e per kg</strong>. Substituting animal protein with grains, tofu, or vegetables cuts dietary footprints by over <strong>90%</strong>.
+                    </p>
+                  </div>
+                )}
+
+                {activeHotspot === 'aviation' && (
+                  <div className="scanner-glass-panel" style={{ borderLeftColor: 'var(--color-consumption)' }}>
+                    <div className="panel-badge-row">
+                      <span className="badge-pill" style={{ backgroundColor: 'rgba(236, 72, 153, 0.15)', color: 'var(--color-consumption)' }}>AEROSPACE METRICS SCAN</span>
+                      <span className="telemetry-txt">SIGNAL: ACTIVE</span>
+                    </div>
+                    <h4>Long-Haul Aviation Telemetry</h4>
+                    <p className="scanner-desc">
+                      Aviation releases ~<strong>150g CO2e/passenger-km</strong>. High-altitude contrails trap rising heat, <strong>doubling the net warming influence</strong> of flights.
+                    </p>
                   </div>
                 )}
               </div>
@@ -501,6 +546,13 @@ Please write a short, friendly response answering their question. (Maximum 3 sen
               >
                 <span className="icon">💬</span> Ask Assistant
               </button>
+              <button
+                type="button"
+                className={`nav-btn ${currentView === 'trivia' ? 'active' : ''}`}
+                onClick={() => handleStartTriviaView()}
+              >
+                <span className="icon">🧠</span> Carbon Trivia
+              </button>
             </nav>
 
             <div className="sidebar-footer">
@@ -519,6 +571,7 @@ Please write a short, friendly response answering their question. (Maximum 3 sen
                 {currentView === 'comparator' && 'Trip Comparator'}
                 {currentView === 'history' && 'Commitment History'}
                 {currentView === 'assistant' && 'AI Assistant Chat'}
+                {currentView === 'trivia' && 'Carbon Trivia Challenge'}
               </h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <span className="user-tag" style={{ display: 'inline-block' }}>
@@ -729,6 +782,157 @@ Please write a short, friendly response answering their question. (Maximum 3 sen
                     Send
                   </button>
                 </form>
+              </div>
+            )}
+
+            {currentView === 'trivia' && (
+              <div className="trivia-dashboard-container" style={{ padding: '2rem', maxWidth: '680px' }}>
+                <h3 style={{ fontFamily: 'var(--font-heading)', marginBottom: '0.5rem' }}>Carbon Trivia Quiz</h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                  Test your carbon and environmental IQ with randomly shuffled questions! Learn key metrics as you play.
+                </p>
+
+                <div className="trivia-widget" style={{ marginTop: 0 }}>
+                  {dashboardTriviaState === 'intro' && (
+                    <div className="trivia-step-container trivia-intro" style={{ textAlign: 'center', alignItems: 'center' }}>
+                      <span className="trivia-badge">5-QUESTION CHALLENGE</span>
+                      <h2>Boost Your Carbon IQ 🧠</h2>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.925rem', margin: '0.75rem auto 1.5rem auto', maxWidth: '400px' }}>
+                        Start a new quiz round! You'll get 5 randomized questions from our database to test your climate awareness.
+                      </p>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => setDashboardTriviaState('question')}
+                      >
+                        Start Challenge 🚀
+                      </button>
+                    </div>
+                  )}
+
+                  {dashboardTriviaState === 'question' && activeTriviaQuestions.length > 0 && (() => {
+                    const currentQ = activeTriviaQuestions[currentTriviaIndex];
+                    return (
+                      <div className="trivia-step-container">
+                        <div className="trivia-progress-bar">
+                          <div className="progress-label">Question {currentTriviaIndex + 1} of 5</div>
+                          <div className="progress-track">
+                            <div className="progress-fill" style={{ width: `${((currentTriviaIndex + 1) / 5) * 100}%` }}></div>
+                          </div>
+                        </div>
+
+                        <h3 className="trivia-question-text">{currentQ.q}</h3>
+
+                        <div className="trivia-options-grid">
+                          {currentQ.options.map((opt, idx) => {
+                            let btnClass = 'trivia-option-btn';
+                            if (isQAnswered) {
+                              if (opt.correct) {
+                                btnClass += ' correct';
+                              } else if (idx === selectedAnswerIdx) {
+                                btnClass += ' incorrect';
+                              } else {
+                                btnClass += ' disabled';
+                              }
+                            } else if (idx === selectedAnswerIdx) {
+                              btnClass += ' selected';
+                            }
+
+                            return (
+                              <button
+                                key={idx}
+                                type="button"
+                                className={btnClass}
+                                disabled={isQAnswered}
+                                onClick={() => {
+                                  setSelectedAnswerIdx(idx);
+                                  setIsQAnswered(true);
+                                  if (opt.correct) {
+                                    setDashboardTriviaScore(prev => prev + 1);
+                                  }
+                                }}
+                              >
+                                <span className="option-text">{opt.text}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {isQAnswered && (
+                          <div className="trivia-explanation-box">
+                            <div className="explanation-title" style={{ color: currentQ.options[selectedAnswerIdx]?.correct ? 'var(--primary)' : 'var(--color-high)' }}>
+                              {currentQ.options[selectedAnswerIdx]?.correct ? '🎉 Correct Answer!' : '❌ Incorrect Answer'}
+                            </div>
+                            <p className="explanation-content">
+                              {currentQ.options[selectedAnswerIdx]?.explanation || currentQ.options.find(o => o.correct).explanation}
+                            </p>
+                            <button
+                              type="button"
+                              className="btn btn-primary"
+                              style={{ alignSelf: 'flex-end', marginTop: '0.75rem' }}
+                              onClick={() => {
+                                setSelectedAnswerIdx(null);
+                                setIsQAnswered(false);
+                                if (currentTriviaIndex === 4) {
+                                  setDashboardTriviaState('results');
+                                } else {
+                                  setCurrentTriviaIndex(prev => prev + 1);
+                                }
+                              }}
+                            >
+                              {currentTriviaIndex === 4 ? 'Finish Challenge →' : 'Next Question →'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {dashboardTriviaState === 'results' && (
+                    <div className="trivia-step-container trivia-results-step" style={{ textAlign: 'center', alignItems: 'center' }}>
+                      <span className="trivia-badge">CHALLENGE COMPLETE</span>
+                      <h2>Your Final Results</h2>
+
+                      <div className="score-ring-wrapper">
+                        <div className="score-ring">
+                          <span className="score-value">{dashboardTriviaScore} / 5</span>
+                          <span className="score-label">Correct</span>
+                        </div>
+                      </div>
+
+                      <div className="score-rank-badge">
+                        {dashboardTriviaScore === 5 && '🏆 Climate Genius'}
+                        {dashboardTriviaScore >= 3 && dashboardTriviaScore <= 4 && '🌳 Eco Champion'}
+                        {dashboardTriviaScore <= 2 && '🌱 Climate Explorer'}
+                      </div>
+
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', margin: '1rem 0', maxWidth: '400px' }}>
+                        {dashboardTriviaScore === 5 && 'Incredible! You got a perfect score. You possess elite carbon intelligence.'}
+                        {dashboardTriviaScore >= 3 && dashboardTriviaScore <= 4 && 'Great work! You have strong environmental literacy. Keep learning to reach perfection.'}
+                        {dashboardTriviaScore <= 2 && 'Good try! Climate science has many subtle nuances. Play again to shuffle a new set of questions and boost your score!'}
+                      </p>
+
+                      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={() => {
+                            const shuffled = [...triviaQuestions].sort(() => 0.5 - Math.random());
+                            const selected = shuffled.slice(0, 5);
+                            setActiveTriviaQuestions(selected);
+                            setCurrentTriviaIndex(0);
+                            setDashboardTriviaScore(0);
+                            setSelectedAnswerIdx(null);
+                            setIsQAnswered(false);
+                            setDashboardTriviaState('question');
+                          }}
+                        >
+                          🔄 Play Again
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </main>
