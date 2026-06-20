@@ -70,7 +70,7 @@ function DecisionCard({ data }) {
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Potential savings if best option chosen:</p>
           <div className="savings-highlight">{savingsKgIfBestChosenOverWorst} kg CO2e</div>
           <div className="equivalence-text" aria-live="polite">
-            <span role="img" aria-label="Equivalence icon">⚡</span> Roughly {equivalence}
+            <span role="img" aria-label="Equivalence icon">⚡</span> {equivalence.charAt(0).toUpperCase() + equivalence.slice(1)}
           </div>
         </div>
       ) : (
