@@ -131,11 +131,3 @@ npm test
 * **Simple Identification:** Relies on local browser storage and plain names rather than full password authentication.
 * **Global Averages:** Uses generalized global averages for electricity grids; future versions could load regional factors based on ZIP code or country.
 * **What-If Extension:** Extending the What-If Simulator to cover diet variables or smart thermostat adjustments.
-
----
-
-## UI Showcase
-
-Here is a design mockup of the premium obsidian and emerald glassmorphic user interface:
-
-![CarbonIQ UI Mockup](docs/screenshots/carboniq_ui_mockup.png)
