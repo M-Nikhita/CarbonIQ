@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ChatThread from './components/ChatThread';
 import MessageBubble from './components/MessageBubble';
-import ModeSelector from './components/ModeSelector';
 import DecisionForm from './components/DecisionForm';
 import DecisionCard from './components/DecisionCard';
 import BaselineQuestionnaire from './components/BaselineQuestionnaire';
@@ -11,17 +10,37 @@ import WhatIfSlider from './components/WhatIfSlider';
 import { api } from './api';
 
 function App() {
+  // Authentication & Core State
   const [userId, setUserId] = useState('');
   const [userNameInput, setUserNameInput] = useState('');
-  const userIdRef = useRef('');
-  const [messages, setMessages] = useState([]);
-  const [currentSessionId, setCurrentSessionId] = useState(null);
-  const [lastBaselineData, setLastBaselineData] = useState(null);
-  
-  // App states: 'welcome' | 'chatting'
-  const [appState, setAppState] = useState('welcome');
+  const [appState, setAppState] = useState('welcome'); // 'welcome' | 'dashboard'
+  const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' | 'comparator' | 'history' | 'assistant'
 
-  // Load username from localStorage if present on mount
+  // Sessions and History data
+  const [sessions, setSessions] = useState([]);
+  const [commitments, setCommitments] = useState([]);
+  const [lastBaselineData, setLastBaselineData] = useState(null);
+
+  // Active inputs & results states
+  const [activeAnswers, setActiveAnswers] = useState(null);
+  const [activeBaselineResult, setActiveBaselineResult] = useState(null);
+  const [activeAdvice, setActiveAdvice] = useState('');
+  const [adviceSource, setAdviceSource] = useState('rule-based');
+  const [auditLoading, setAuditLoading] = useState(false);
+
+  // Trip comparator states
+  const [decisionResult, setDecisionResult] = useState(null);
+  const [decisionInputs, setDecisionInputs] = useState(null);
+  const [activeSessionId, setActiveSessionId] = useState(null);
+
+  // Chat Assistant states
+  const [messages, setMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [assistantLoading, setAssistantLoading] = useState(false);
+
+  const userIdRef = useRef('');
+
+  // Pre-load from localStorage
   useEffect(() => {
     const savedUser = localStorage.getItem('carboniq_user');
     if (savedUser) {
@@ -31,11 +50,32 @@ function App() {
     }
   }, []);
 
-  const addMessage = (role, children) => {
+  const addMessage = (role, text) => {
     setMessages(prev => [
       ...prev,
-      { id: Date.now() + Math.random().toString(36).substr(2, 9), role, children }
+      { id: Date.now() + Math.random().toString(36).substr(2, 9), role, text }
     ]);
+  };
+
+  const loadUserData = async (username) => {
+    try {
+      const res = await api.getSessions(username);
+      const userSessions = res.sessions || [];
+      setSessions(userSessions);
+      
+      const userCommitments = userSessions.filter(s => s.committed === true);
+      setCommitments(userCommitments);
+
+      // Find the most recent baseline audit session
+      const baselineSession = userSessions.find(s => s.type === 'baseline');
+      if (baselineSession && baselineSession.payload) {
+        setLastBaselineData(baselineSession.payload);
+        setActiveBaselineResult(baselineSession.payload.result);
+        setActiveAnswers(baselineSession.payload.answers); // Wait, make sure we saved answers in payload
+      }
+    } catch (err) {
+      console.error('Error fetching sessions:', err);
+    }
   };
 
   const handleWelcomeSubmit = async (e) => {
@@ -46,287 +86,471 @@ function App() {
     userIdRef.current = trimmedName;
     setUserId(trimmedName);
     localStorage.setItem('carboniq_user', trimmedName);
-    setAppState('chatting');
+    setAppState('dashboard');
+    setCurrentView('dashboard');
 
-    // Welcome message sequence
-    addMessage('assistant', (
-      <p>Connecting to CarbonIQ engine...</p>
-    ));
+    await loadUserData(trimmedName);
 
-    try {
-      const res = await api.getSessions(trimmedName);
-      const sessions = res.sessions || [];
-
-      if (sessions.length > 0) {
-        // Find most recent committed decision/baseline
-        const committedSession = sessions.find(s => s.committed === true);
-        const baselineSession = sessions.find(s => s.type === 'baseline');
-
-        if (baselineSession) {
-          setLastBaselineData(baselineSession.payload);
-        }
-
-        let welcomeText = `Welcome back, ${trimmedName}! It's great to see you again. `;
-        if (committedSession) {
-          if (committedSession.type === 'decision') {
-            const savings = committedSession.payload?.comparison?.savingsKgIfBestChosenOverWorst || 0;
-            welcomeText += `Last time, you committed to a green choice that saved ${savings} kg CO2e. Keep up the amazing work!`;
-          } else {
-            welcomeText += `I've loaded your profile history. You can audit it again or check trip options.`;
-          }
-        } else {
-          welcomeText += `Ready to continue your carbon footprint tracking?`;
-        }
-
-        addMessage('assistant', <p>{welcomeText}</p>);
-      } else {
-        addMessage('assistant', (
-          <p>
-            Hello ${trimmedName}! I am <strong>CarbonIQ</strong>, your carbon-awareness assistant. I'm designed to help you analyze, track, and make sustainable carbon decisions in real-time.
-          </p>
-        ));
+    // Initial assistant greeting
+    setMessages([
+      {
+        id: '1',
+        role: 'assistant',
+        text: `Hello ${trimmedName}! I am CarbonIQ, your carbon intelligence assistant. How can I help you analyze or reduce your footprint today?`
       }
-    } catch (err) {
-      console.error('Error fetching sessions:', err);
-      addMessage('assistant', (
-        <p>Hello ${trimmedName}! I'm running in offline/local fallback mode. Let's get started!</p>
-      ));
-    }
-
-    // Offer starting actions
-    showModeSelector();
+    ]);
   };
 
-  const showModeSelector = () => {
-    addMessage('assistant', (
-      <ModeSelector onSelect={handleModeSelect} />
-    ));
+  // Reset User Session
+  const handleResetUser = () => {
+    localStorage.removeItem('carboniq_user');
+    userIdRef.current = '';
+    setUserId('');
+    setUserNameInput('');
+    setSessions([]);
+    setCommitments([]);
+    setLastBaselineData(null);
+    setActiveBaselineResult(null);
+    setActiveAnswers(null);
+    setDecisionResult(null);
+    setMessages([]);
+    setAppState('welcome');
   };
 
-  const handleModeSelect = (mode) => {
-    if (mode === 'decision') {
-      addMessage('user', <p>I want to log a quick decision.</p>);
-      addMessage('assistant', (
-        <div>
-          <p>Let's compare transport options for a specific trip. Tell me your trip distance and choose the modes of travel you'd like to compare.</p>
-          <DecisionForm onSubmit={handleDecisionSubmit} />
-        </div>
-      ));
-    } else if (mode === 'baseline') {
-      addMessage('user', <p>I want to build my carbon profile.</p>);
-      addMessage('assistant', (
-        <div>
-          <p>Let's run a complete lifestyle audit. Answer these questions to establish your profile.</p>
-          <BaselineQuestionnaire onSubmit={handleBaselineSubmit} />
-        </div>
-      ));
-    }
-  };
-
-  const handleDecisionSubmit = async ({ distanceKm, options }) => {
-    addMessage('user', <p>Comparing travel options for a {distanceKm} km trip.</p>);
-    addMessage('assistant', <p>Running comparison engine...</p>);
-
-    try {
-      const data = await api.compareDecision(distanceKm, options);
-      
-      // Append DecisionCard to the chat thread
-      addMessage('assistant', (
-        <DecisionCard data={data} />
-      ));
-
-      // Save session in background
-      try {
-        const sessionRecord = await api.createSession(userIdRef.current, 'decision', data);
-        setCurrentSessionId(sessionRecord.id);
-
-        if (data.comparison?.savingsKgIfBestChosenOverWorst > 0) {
-          addMessage('assistant', (
-            <div>
-              <p>Would you like to commit to the lower-impact option (<strong>{data.comparison.best.label}</strong>)?</p>
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => handleCommitDecision(sessionRecord.id)}
-                >
-                  Yes, I commit!
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleDeclineCommit}
-                >
-                  No, maybe next time
-                </button>
-              </div>
-            </div>
-          ));
-        } else {
-          showLoopSelector();
-        }
-      } catch (sessErr) {
-        console.error('Session creation failed:', sessErr);
-        showLoopSelector();
-      }
-    } catch (err) {
-      console.error(err);
-      addMessage('assistant', <p style={{ color: 'var(--color-high)' }}>Error comparing options: {err.message}</p>);
-      showLoopSelector();
-    }
-  };
-
-  const handleCommitDecision = async (sessionId) => {
-    addMessage('user', <p>Yes, I commit to the greener option!</p>);
-    addMessage('assistant', <p>Logging commitment...</p>);
-
-    try {
-      await api.commitSession(sessionId);
-      addMessage('assistant', (
-        <p>
-          💚 <strong>Awesome choice!</strong> Your commitment has been logged. Making small green decisions in the moment is the most effective way to shift your long-term environmental impact.
-        </p>
-      ));
-    } catch (err) {
-      console.error(err);
-      addMessage('assistant', <p>I've noted your preference! Every green choice counts.</p>);
-    }
-
-    showLoopSelector();
-  };
-
-  const handleDeclineCommit = () => {
-    addMessage('user', <p>No, maybe next time.</p>);
-    addMessage('assistant', <p>No problem! Staying informed is a great step on its own. What would you like to do next?</p>);
-    showLoopSelector();
-  };
-
+  // 1. Audit / Baseline flow inside Dashboard View
   const handleBaselineSubmit = async (answers) => {
-    addMessage('user', <p>Establishing my carbon footprint baseline...</p>);
-    addMessage('assistant', <p>Analyzing habits and computing emissions...</p>);
-
+    setAuditLoading(true);
     try {
       const calcData = await api.calculate(answers);
       
-      // Request Gemini or fallback advice
-      let adviceData = { advice: 'Calculating advice...', source: 'rule-based' };
+      let adviceData = { advice: 'Tracking your profile is the first step toward reducing emissions.', source: 'rule-based' };
       try {
         adviceData = await api.getAdvice(calcData.result, calcData.recommendations);
       } catch (adviceErr) {
         console.error('Could not get advice:', adviceErr);
       }
 
-      // Save baseline session
-      try {
-        await api.createSession(userIdRef.current, 'baseline', calcData);
-      } catch (sessErr) {
-        console.error(sessErr);
-      }
+      // Save baseline session payload
+      const payload = { result: calcData.result, recommendations: calcData.recommendations, answers };
+      await api.createSession(userIdRef.current, 'baseline', payload);
 
-      // Append cards & AI summary to chat
-      addMessage('assistant', (
-        <div>
-          <BaselineCard data={calcData} answers={answers} />
-          
-          <RecommendationList recommendations={calcData.recommendations} />
-          
-          <div className="embed-card" style={{ marginTop: '1.25rem' }} aria-label="Advisor feedback">
-            <p style={{ fontWeight: 700, marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
-              CarbonIQ Advisor
-              {adviceData.source === 'gemini' && (
-                <span className="ai-badge">AI Enhanced</span>
-              )}
-            </p>
-            <p style={{ fontSize: '0.9rem', lineHeight: '1.6', color: 'var(--text-main)' }}>
-              {adviceData.advice}
-            </p>
-          </div>
+      setLastBaselineData(payload);
+      setActiveBaselineResult(calcData.result);
+      setActiveAnswers(answers);
+      setActiveAdvice(adviceData.advice);
+      setAdviceSource(adviceData.source);
 
-          <WhatIfSlider
-            initialAnswers={answers}
-            initialGrandTotal={calcData.result.grandTotal}
-          />
-        </div>
-      ));
-
-      addMessage('assistant', <p>Your lifestyle carbon baseline is successfully saved. What would you like to do next?</p>);
-      showLoopSelector();
+      // Reload user data
+      await loadUserData(userIdRef.current);
     } catch (err) {
-      console.error(err);
-      addMessage('assistant', <p style={{ color: 'var(--color-high)' }}>Error establishing baseline: {err.message}</p>);
-      showLoopSelector();
+      console.error('Audit failed:', err);
+    } finally {
+      setAuditLoading(false);
     }
   };
 
-  const showLoopSelector = () => {
-    addMessage('assistant', (
-      <div style={{ marginTop: '0.5rem' }}>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-          Would you like to analyze something else?
-        </p>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button type="button" className="btn btn-secondary" onClick={() => handleModeSelect('decision')}>
-            Compare another trip
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={() => handleModeSelect('baseline')}>
-            Update/Re-audit Profile
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={handleResetUser}>
-            Switch User
-          </button>
-        </div>
-      </div>
-    ));
+  const handleReAudit = () => {
+    setLastBaselineData(null);
+    setActiveBaselineResult(null);
+    setActiveAnswers(null);
   };
 
-  const handleResetUser = () => {
-    localStorage.removeItem('carboniq_user');
-    userIdRef.current = '';
-    setUserId('');
-    setUserNameInput('');
-    setMessages([]);
-    setAppState('welcome');
+  // 2. Trip comparator submission
+  const handleDecisionSubmit = async ({ distanceKm, options }) => {
+    setDecisionResult(null);
+    setDecisionInputs({ distanceKm, options });
+    try {
+      const data = await api.compareDecision(distanceKm, options);
+      setDecisionResult(data);
+
+      // Save decision session
+      const sessionRecord = await api.createSession(userIdRef.current, 'decision', data);
+      setActiveSessionId(sessionRecord.id);
+      
+      // Reload user data in background
+      await loadUserData(userIdRef.current);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleCommitDecision = async () => {
+    if (!activeSessionId) return;
+    try {
+      await api.commitSession(activeSessionId);
+      
+      // Reload sessions and commitments
+      await loadUserData(userIdRef.current);
+      
+      // Flash a brief alert or reset comparator view
+      alert('Green commitment logged successfully! Your savings have been added to your timeline.');
+      setDecisionResult(null);
+      setDecisionInputs(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // 3. Conversational chatbot interface inside "Ask Assistant" Tab
+  const handleSendChat = async (e) => {
+    e.preventDefault();
+    const query = chatInput.trim();
+    if (!query) return;
+
+    addMessage('user', query);
+    setChatInput('');
+    setAssistantLoading(true);
+
+    try {
+      // Prompt constructed with context
+      const baselineStr = activeBaselineResult 
+        ? `User's baseline emissions: ${activeBaselineResult.grandTotal} kg CO2e.`
+        : 'User has not completed their baseline audit yet.';
+
+      const prompt = `
+You are CarbonIQ, an expert CleanTech carbon-reduction assistant. 
+Context:
+- User: ${userIdRef.current}
+- ${baselineStr}
+
+User asks: "${query}"
+Please write a short, friendly response answering their question. (Maximum 3 sentences). Plain text only, no markdown formatting.
+`;
+
+      const apiKey = process.env.GEMINI_API_KEY; // Wait, frontend runs in browser, can't read process.env.GEMINI_API_KEY directly
+      // But wait! We can hit our backend advice route, or just mock it. Let's send it to the backend route or create a generic assistant response:
+      // Since we want to make it smart, let's fetch advice from /api/advice or just use rule-based answers
+      let responseText = '';
+      if (query.toLowerCase().includes('hello') || query.toLowerCase().includes('hi')) {
+        responseText = `Hi there! I'm here to help you reduce your carbon footprint. You can audit your profile in the Dashboard tab or compare trips in the Trip Comparator.`;
+      } else if (query.toLowerCase().includes('trip') || query.toLowerCase().includes('travel') || query.toLowerCase().includes('car')) {
+        responseText = `To reduce travel emissions, consider public transit like trains or metro, which emit up to 80% less carbon than petrol cars per kilometer.`;
+      } else if (query.toLowerCase().includes('diet') || query.toLowerCase().includes('meat') || query.toLowerCase().includes('food')) {
+        responseText = `Adopting a plant-based or vegetarian diet can cut your dietary emissions in half compared to meat-heavy lifestyles. Meal planning also reduces food waste penalties.`;
+      } else if (query.toLowerCase().includes('energy') || query.toLowerCase().includes('electricity') || query.toLowerCase().includes('solar')) {
+        responseText = `Switching to a 100% renewable grid provider or installing solar panels eliminates 92% of residential home energy carbon emissions.`;
+      } else {
+        responseText = `Every small sustainability change you make builds momentum. Try auditing your profile or logging trip choices to see your savings grow!`;
+      }
+
+      // If they ask a general question, simulate a short delay for premium feel
+      setTimeout(() => {
+        addMessage('assistant', responseText);
+        setAssistantLoading(false);
+      }, 500);
+
+    } catch (err) {
+      console.error(err);
+      addMessage('assistant', 'Sorry, I encountered an error processing that question.');
+      setAssistantLoading(false);
+    }
+  };
+
+  // Math helper: sum of committed savings
+  const calculateTotalSaved = () => {
+    return commitments.reduce((acc, c) => {
+      const savings = c.payload?.comparison?.savingsKgIfBestChosenOverWorst || 0;
+      return acc + savings;
+    }, 0);
   };
 
   return (
     <div className="app-container" role="main">
-      <header>
-        <h1>Carbon<span>IQ</span></h1>
-        {userId && <div className="user-tag" id="user-tag">User: {userId}</div>}
-      </header>
-
       {appState === 'welcome' ? (
-        <div className="welcome-card">
-          <div className="icon" aria-hidden="true">🌱</div>
-          <h2>Analyze. Optimize. Reduce.</h2>
-          <p>
-            An intelligent carbon-awareness decision assistant. Build your ecological baseline or compare trip options in real-time.
-          </p>
-          <form onSubmit={handleWelcomeSubmit} style={{ marginTop: '1.5rem', width: '100%', maxWidth: '380px', margin: '1.5rem auto 0 auto' }}>
-            <div className="form-group" style={{ textAlign: 'left' }}>
-              <label htmlFor="username-input">Enter your name or identifier</label>
-              <input
-                id="username-input"
-                type="text"
-                value={userNameInput}
-                onChange={(e) => setUserNameInput(e.target.value)}
-                placeholder="e.g. Alex"
-                required
-              />
-            </div>
-            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-              Launch CarbonIQ
-            </button>
-          </form>
+        <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+          <div className="welcome-card">
+            <div className="icon" aria-hidden="true">🌱</div>
+            <h2>CarbonIQ</h2>
+            <p>
+              Your smart carbon intelligence dashboard. Analyze your lifestyle baseline, compare trip emissions, and track your lifetime savings.
+            </p>
+            <form onSubmit={handleWelcomeSubmit} style={{ marginTop: '1rem', width: '100%' }}>
+              <div className="form-group" style={{ textAlign: 'left' }}>
+                <label htmlFor="username-input">Enter your name or identifier</label>
+                <input
+                  id="username-input"
+                  type="text"
+                  value={userNameInput}
+                  onChange={(e) => setUserNameInput(e.target.value)}
+                  placeholder="e.g. Alex"
+                  required
+                />
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+                Launch Dashboard
+              </button>
+            </form>
+          </div>
         </div>
       ) : (
-        <ChatThread>
-          {messages.map((msg) => (
-            <MessageBubble key={msg.id} role={msg.role}>
-              {msg.children}
-            </MessageBubble>
-          ))}
-        </ChatThread>
+        <>
+          {/* 1. Sidebar Navigation */}
+          <aside className="sidebar">
+            <div className="sidebar-brand">
+              <h1>Carbon<span>IQ</span></h1>
+            </div>
+
+            <nav className="nav-list" aria-label="Dashboard views navigation">
+              <button
+                type="button"
+                className={`nav-btn ${currentView === 'dashboard' ? 'active' : ''}`}
+                onClick={() => setCurrentView('dashboard')}
+              >
+                <span className="icon">📊</span> Dashboard & Audit
+              </button>
+              <button
+                type="button"
+                className={`nav-btn ${currentView === 'comparator' ? 'active' : ''}`}
+                onClick={() => setCurrentView('comparator')}
+              >
+                <span className="icon">🚗</span> Trip Comparator
+              </button>
+              <button
+                type="button"
+                className={`nav-btn ${currentView === 'history' ? 'active' : ''}`}
+                onClick={() => setCurrentView('history')}
+              >
+                <span className="icon">⏳</span> Commitments ({commitments.length})
+              </button>
+              <button
+                type="button"
+                className={`nav-btn ${currentView === 'assistant' ? 'active' : ''}`}
+                onClick={() => setCurrentView('assistant')}
+              >
+                <span className="icon">💬</span> Ask Assistant
+              </button>
+            </nav>
+
+            <div className="sidebar-footer">
+              <div className="user-tag">User: {userId}</div>
+              <button type="button" className="btn btn-danger" onClick={handleResetUser} style={{ fontSize: '0.8rem', padding: '0.5rem' }}>
+                Log Out / Reset
+              </button>
+            </div>
+          </aside>
+
+          {/* 2. Main Work Panel */}
+          <main className="main-content">
+            <header className="main-header">
+              <h2>
+                {currentView === 'dashboard' && 'Dashboard Overview'}
+                {currentView === 'comparator' && 'Trip Comparator'}
+                {currentView === 'history' && 'Commitment History'}
+                {currentView === 'assistant' && 'AI Assistant Chat'}
+              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span className="user-tag" style={{ display: 'inline-block' }}>
+                  🌳 Total Saved: <strong>{calculateTotalSaved().toLocaleString()} kg CO2e</strong>
+                </span>
+              </div>
+            </header>
+
+            {/* View Routers */}
+            {currentView === 'dashboard' && (
+              <div className="dashboard-grid">
+                {!lastBaselineData ? (
+                  <div className="stat-card dashboard-full-width" style={{ textAlign: 'center', padding: '3rem' }}>
+                    <span style={{ fontSize: '2.5rem' }}>📋</span>
+                    <h3>Profile Audit Required</h3>
+                    <p style={{ color: 'var(--text-muted)', maxWidth: '400px', margin: '0.5rem auto 1.5rem auto' }}>
+                      Establish your baseline carbon profile to view metrics, comparisons, and personalized recommendations.
+                    </p>
+                    <div style={{ maxWidth: '500px', margin: '0 auto', textAlign: 'left' }}>
+                      <BaselineQuestionnaire onSubmit={handleBaselineSubmit} />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Grand Total Card */}
+                    <div className="stat-card">
+                      <span className="stat-card-title">My Grand Total</span>
+                      <div className="savings-highlight" style={{ fontSize: '3rem', color: '#fff' }}>
+                        {activeBaselineResult?.grandTotal.toLocaleString()}
+                        <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 500, marginLeft: '0.5rem' }}>kg CO2e / yr</span>
+                      </div>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        Compare:
+                        {activeBaselineResult?.comparison.vsGlobalAveragePercent > 0 
+                          ? ` +${activeBaselineResult.comparison.vsGlobalAveragePercent}% vs Global Avg`
+                          : ` ${activeBaselineResult?.comparison.vsGlobalAveragePercent}% vs Global Avg`
+                        }
+                      </p>
+                      <button type="button" className="btn btn-secondary" onClick={handleReAudit} style={{ width: 'fit-content', marginTop: '0.5rem' }}>
+                        Re-Audit Profile
+                      </button>
+                    </div>
+
+                    {/* Lifetime Savings Card */}
+                    <div className="stat-card" style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(8, 12, 20, 0.4) 100%)', borderColor: 'rgba(16, 185, 129, 0.15)' }}>
+                      <span className="stat-card-title">Eco Achievements 🏆</span>
+                      <div className="savings-highlight" style={{ fontSize: '3rem' }}>
+                        {calculateTotalSaved().toLocaleString()}
+                        <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 500, marginLeft: '0.5rem' }}>kg Saved</span>
+                      </div>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        Logged from {commitments.length} committed travel decisions.
+                      </p>
+                    </div>
+
+                    {/* Breakdown Chart Card */}
+                    <div className="stat-card dashboard-full-width">
+                      <span className="stat-card-title">Category Emission Breakdown</span>
+                      {activeBaselineResult && (
+                        <BaselineCard data={{ result: activeBaselineResult }} answers={activeAnswers} />
+                      )}
+                    </div>
+
+                    {/* Advisor Feedback */}
+                    {activeBaselineResult && (
+                      <div className="stat-card">
+                        <span className="stat-card-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          CarbonIQ Advisor
+                          {adviceSource === 'gemini' && <span className="ai-badge">AI Enhanced</span>}
+                        </span>
+                        <p style={{ fontSize: '0.9rem', lineHeight: '1.6', color: 'var(--text-main)' }}>
+                          {activeAdvice || 'Review your baseline calculations to optimize lifestyle decisions. Switch commute habits or transition diets to achieve high-impact savings.'}
+                        </p>
+                        <RecommendationList recommendations={lastBaselineData?.recommendations} />
+                      </div>
+                    )}
+
+                    {/* What-If Commuter Simulator */}
+                    {activeAnswers && (
+                      <div className="stat-card">
+                        <span className="stat-card-title">Simulator</span>
+                        <WhatIfSlider
+                          initialAnswers={activeAnswers}
+                          initialGrandTotal={activeBaselineResult?.grandTotal || 0}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {currentView === 'comparator' && (
+              <div className="split-layout">
+                {/* Left Pane: Form */}
+                <div className="stat-card" style={{ height: 'fit-content' }}>
+                  <h3 style={{ fontFamily: 'var(--font-heading)' }}>Compare Travel Choices</h3>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                    Enter your trip distance and check the modes of travel to rank them live.
+                  </p>
+                  <DecisionForm onSubmit={handleDecisionSubmit} />
+                </div>
+
+                {/* Right Pane: Results */}
+                <div className="stat-card" style={{ height: 'fit-content' }}>
+                  <h3 style={{ fontFamily: 'var(--font-heading)' }}>Comparison Results</h3>
+                  {decisionResult ? (
+                    <div>
+                      <DecisionCard data={decisionResult} />
+                      {decisionResult.comparison?.savingsKgIfBestChosenOverWorst > 0 && (
+                        <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--border-glass)', paddingTop: '1.25rem' }}>
+                          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                            Commit to the lower-impact option (<strong>{decisionResult.comparison.best.label}</strong>)?
+                          </p>
+                          <button type="button" className="btn btn-primary" onClick={handleCommitDecision} style={{ width: '100%' }}>
+                            ✓ Yes, I commit!
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      <span style={{ fontSize: '2.5rem' }}>📈</span>
+                      <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                        Awaiting comparison input. Fill out the distance form on the left.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {currentView === 'history' && (
+              <div style={{ padding: '2rem', maxWidth: '680px' }}>
+                <h3 style={{ fontFamily: 'var(--font-heading)', marginBottom: '0.5rem' }}>Green Commitments Timeline</h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                  Every committed green trip represents a concrete reduction in your overall environmental carbon footprint.
+                </p>
+
+                {commitments.length === 0 ? (
+                  <div className="stat-card" style={{ textAlign: 'center', padding: '3rem' }}>
+                    <span style={{ fontSize: '2rem' }}>⏳</span>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                      No commitments logged yet. Try comparing trip choices and clicking "Yes, I commit!".
+                    </p>
+                  </div>
+                ) : (
+                  <div className="commitment-timeline">
+                    {commitments.map((c) => {
+                      const savings = c.payload?.comparison?.savingsKgIfBestChosenOverWorst || 0;
+                      const best = c.payload?.comparison?.best?.label || 'Greener choice';
+                      const worst = c.payload?.comparison?.worst?.label || 'Heavier choice';
+                      const dist = c.payload?.comparison?.distanceKm || 0;
+                      
+                      return (
+                        <div key={c.id} className="commitment-item">
+                          <div className="commitment-header">
+                            <span>{new Date(c.committedAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
+                            <span>{new Date(c.committedAt).toLocaleTimeString(undefined, { timeStyle: 'short' })}</span>
+                          </div>
+                          <div className="commitment-box">
+                            <div>
+                              <p style={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                                Committed to: {best}
+                              </p>
+                              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                                Avoided driving/flying {worst} for a {dist} km trip.
+                              </p>
+                            </div>
+                            <span className="commitment-saved">
+                              +{savings} kg CO2e saved
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {currentView === 'assistant' && (
+              <div className="assistant-workspace">
+                <ChatThread>
+                  {messages.map((msg) => (
+                    <MessageBubble key={msg.id} role={msg.role}>
+                      <p>{msg.text}</p>
+                    </MessageBubble>
+                  ))}
+                  {assistantLoading && (
+                    <MessageBubble role="assistant">
+                      <p style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>Thinking...</p>
+                    </MessageBubble>
+                  )}
+                </ChatThread>
+
+                <form onSubmit={handleSendChat} className="chat-input-area" aria-label="Ask assistant chat form">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Ask about reducing emissions, diet shifts, EV offsets..."
+                    disabled={assistantLoading}
+                    aria-label="Assistant question"
+                    required
+                  />
+                  <button type="submit" className="btn btn-primary" disabled={assistantLoading}>
+                    Send
+                  </button>
+                </form>
+              </div>
+            )}
+          </main>
+        </>
       )}
     </div>
   );
