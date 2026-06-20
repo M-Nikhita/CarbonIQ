@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ChatThread from './components/ChatThread';
 import MessageBubble from './components/MessageBubble';
 import ModeSelector from './components/ModeSelector';
@@ -13,6 +13,7 @@ import { api } from './api';
 function App() {
   const [userId, setUserId] = useState('');
   const [userNameInput, setUserNameInput] = useState('');
+  const userIdRef = useRef('');
   const [messages, setMessages] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [lastBaselineData, setLastBaselineData] = useState(null);
@@ -26,6 +27,7 @@ function App() {
     if (savedUser) {
       setUserId(savedUser);
       setUserNameInput(savedUser);
+      userIdRef.current = savedUser;
     }
   }, []);
 
@@ -41,6 +43,7 @@ function App() {
     const trimmedName = userNameInput.trim();
     if (!trimmedName) return;
 
+    userIdRef.current = trimmedName;
     setUserId(trimmedName);
     localStorage.setItem('carboniq_user', trimmedName);
     setAppState('chatting');
@@ -134,7 +137,7 @@ function App() {
 
       // Save session in background
       try {
-        const sessionRecord = await api.createSession(userId, 'decision', data);
+        const sessionRecord = await api.createSession(userIdRef.current, 'decision', data);
         setCurrentSessionId(sessionRecord.id);
 
         if (data.comparison?.savingsKgIfBestChosenOverWorst > 0) {
@@ -215,7 +218,7 @@ function App() {
 
       // Save baseline session
       try {
-        await api.createSession(userId, 'baseline', calcData);
+        await api.createSession(userIdRef.current, 'baseline', calcData);
       } catch (sessErr) {
         console.error(sessErr);
       }
@@ -278,6 +281,7 @@ function App() {
 
   const handleResetUser = () => {
     localStorage.removeItem('carboniq_user');
+    userIdRef.current = '';
     setUserId('');
     setUserNameInput('');
     setMessages([]);
