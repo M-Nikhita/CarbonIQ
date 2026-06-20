@@ -4,6 +4,7 @@
 
 ## Chosen Vertical
 * **[Challenge 3] Carbon Footprint Awareness Platform** (Google Virtual Promptwars)
+* **Deployed URL:** [carbon-iq-orpin.vercel.app](https://carbon-iq-orpin.vercel.app)
 
 ---
 
