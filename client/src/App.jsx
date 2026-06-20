@@ -16,6 +16,11 @@ function App() {
   const [appState, setAppState] = useState('welcome'); // 'welcome' | 'dashboard'
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' | 'comparator' | 'history' | 'assistant'
 
+  // Interactive landing page calculator state
+  const [landingTransitMode, setLandingTransitMode] = useState('car');
+  const [landingDistance, setLandingDistance] = useState(120);
+
+
   // Sessions and History data
   const [sessions, setSessions] = useState([]);
   const [commitments, setCommitments] = useState([]);
@@ -262,61 +267,95 @@ Please write a short, friendly response answering their question. (Maximum 3 sen
             <div className="welcome-hero-content">
               <h1 className="welcome-logo">Carbon<span>IQ</span></h1>
               <p className="welcome-tagline">
-                Your premium carbon intelligence platform. Analyze your lifestyle baseline, compare trip footprints, simulate reductions, and track lifetime savings.
+                Your premium carbon intelligence platform. Estimate commute footprints below, or sign in to run complete baseline audits and track lifetime savings.
               </p>
               
-              <div className="welcome-features" role="list">
-                <div className="welcome-feature-card" role="listitem">
-                  <span className="welcome-feature-icon" aria-hidden="true">📊</span>
-                  <h2 className="welcome-feature-title">Profile Auditing</h2>
-                  <p className="welcome-feature-desc">Establish your carbon emissions baseline using tailored lifestyle metrics.</p>
+              {/* Interactive Landing Page Estimator Widget */}
+              <div className="landing-estimator">
+                <div className="estimator-header-row">
+                  <span className="estimator-badge-label">INTERACTIVE PREVIEW</span>
+                  <h3>Quick Commute Estimator</h3>
                 </div>
-                <div className="welcome-feature-card" role="listitem">
-                  <span className="welcome-feature-icon" aria-hidden="true">🚗</span>
-                  <h2 className="welcome-feature-title">Trip Comparator</h2>
-                  <p className="welcome-feature-desc">Compare transport options by actual travel distances to make green transit choices.</p>
-                </div>
-                <div className="welcome-feature-card" role="listitem">
-                  <span className="welcome-feature-icon" aria-hidden="true">💡</span>
-                  <h2 className="welcome-feature-title">What-If Simulator</h2>
-                  <p className="welcome-feature-desc">Model changes to your daily commute habits and see real-time footprint shifts.</p>
-                </div>
-                <div className="welcome-feature-card" role="listitem">
-                  <span className="welcome-feature-icon" aria-hidden="true">💬</span>
-                  <h2 className="welcome-feature-title">Gemini AI Advisor</h2>
-                  <p className="welcome-feature-desc">Get personalized, actionable suggestions to tackle your high-impact carbon categories.</p>
-                </div>
-              </div>
+                
+                <div className="estimator-inputs">
+                  <div className="form-group">
+                    <label>Select Commute Transport</label>
+                    <div className="transit-btn-group">
+                      {[
+                        { id: 'car', label: '🚗 Car' },
+                        { id: 'bus', label: '🚌 Bus' },
+                        { id: 'train', label: '🚊 Train' },
+                        { id: 'bike', label: '🚲 Active' }
+                      ].map(opt => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          className={`transit-opt-btn ${landingTransitMode === opt.id ? 'active' : ''}`}
+                          onClick={() => setLandingTransitMode(opt.id)}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-              <div className="welcome-visualizer">
-                <div className="visualizer-graphic">
-                  <div className="visualizer-circle"></div>
-                  <div className="visualizer-circle-inner"></div>
-                  <div className="visualizer-badge" aria-hidden="true">🌱</div>
-                </div>
-                <div className="visualizer-stats">
-                  <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.25rem', color: '#fff' }}>CarbonIQ Active Metrics</div>
-                  <div className="stat-row">
-                    <span className="stat-dot" style={{ backgroundColor: 'var(--color-transport)' }}></span>
-                    <span style={{ color: 'var(--text-muted)' }}>Transport:</span> <span>3.2 tons CO2e avg</span>
+                  <div className="form-group" style={{ marginTop: '1.25rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                      <label htmlFor="landing-dist-slider">Weekly Distance</label>
+                      <span className="slider-val" style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                        {landingDistance} km / week
+                      </span>
+                    </div>
+                    <input
+                      id="landing-dist-slider"
+                      type="range"
+                      min="0"
+                      max="500"
+                      step="10"
+                      value={landingDistance}
+                      onChange={(e) => setLandingDistance(Number(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
                   </div>
-                  <div className="stat-row">
-                    <span className="stat-dot" style={{ backgroundColor: 'var(--color-energy)' }}></span>
-                    <span style={{ color: 'var(--text-muted)' }}>Home Energy:</span> <span>2.8 tons CO2e avg</span>
-                  </div>
                 </div>
+
+                {/* Live Footprint Output Dial */}
+                {(() => {
+                  const factors = { car: 0.171, bus: 0.082, train: 0.041, bike: 0.0 };
+                  const co2Kg = landingDistance * 52 * factors[landingTransitMode];
+                  const co2Tons = (co2Kg / 1000).toFixed(2);
+                  const treesToOffset = Math.round(co2Kg / 20);
+
+                  return (
+                    <div className="estimator-output">
+                      <div className="output-dial">
+                        <div className="output-dial-circle"></div>
+                        <div className="output-dial-inner">
+                          <span className="output-num">{co2Tons}</span>
+                          <span className="output-unit">Tons CO2e / yr</span>
+                        </div>
+                      </div>
+                      <div className="output-message">
+                        <p>Your commute produces approximately <strong>{co2Kg.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg</strong> of CO2 annually.</p>
+                        <p className="equivalence-text" style={{ marginTop: '0.35rem' }}>
+                          🌲 Needs <strong>{treesToOffset} trees</strong> growing for a year to absorb this carbon.
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
           
           <div className="welcome-card-wrapper">
-            <div className="welcome-card" style={{ margin: 0, width: '100%' }}>
-              <div className="icon" aria-hidden="true">🔒</div>
+            <div className="welcome-card login-portal">
+              <div className="portal-badge" aria-hidden="true">SECURE GATEWAY</div>
               <h2>Launch Dashboard</h2>
               <p>
-                Enter your identifier to load your profile, track committed decisions, and view your stats.
+                Enter your identifier to calculate your full baseline carbon footprint, run What-If simulations, and track green commitments.
               </p>
-              <form onSubmit={handleWelcomeSubmit} style={{ marginTop: '1rem', width: '100%' }}>
+              <form onSubmit={handleWelcomeSubmit} style={{ marginTop: '1.25rem', width: '100%' }}>
                 <div className="form-group" style={{ textAlign: 'left' }}>
                   <label htmlFor="username-input">Enter your name or identifier</label>
                   <input
@@ -328,10 +367,13 @@ Please write a short, friendly response answering their question. (Maximum 3 sen
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-                  Launch Dashboard
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.85rem' }}>
+                  Enter Dashboard →
                 </button>
               </form>
+              <div className="portal-footer">
+                ⚡ Powered by Gemini AI • 🔒 Local Session Cache
+              </div>
             </div>
           </div>
         </div>

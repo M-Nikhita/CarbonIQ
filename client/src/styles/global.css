@@ -807,138 +807,162 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 500;
 }
 
-.welcome-features {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
-  margin-top: 1rem;
+/* Unique Interactive Estimator styles */
+.landing-estimator {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 2rem;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  border-left: 3px solid var(--primary);
+  text-align: left;
 }
 
-@media (max-width: 640px) {
-  .welcome-features {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+.estimator-header-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.estimator-header-row h3 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.estimator-badge-label {
+  align-self: flex-start;
+  font-size: 0.65rem;
+  font-weight: 800;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--primary);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.transit-btn-group {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 480px) {
+  .transit-btn-group {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-.welcome-feature-card {
+.transit-opt-btn {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-glass);
+  color: var(--text-muted);
+  padding: 0.65rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.transit-opt-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.transit-opt-btn.active {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+  transform: translateY(-1px);
+}
+
+.estimator-output {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-glass);
   padding: 1.25rem;
   border-radius: 14px;
-  transition: var(--transition-smooth);
-}
-
-.welcome-feature-card:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(16, 185, 129, 0.25);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.05);
-}
-
-.welcome-feature-icon {
-  font-size: 1.75rem;
-  margin-bottom: 0.5rem;
-  display: inline-block;
-}
-
-.welcome-feature-title {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--text-main);
-  margin-bottom: 0.35rem;
-}
-
-.welcome-feature-desc {
-  font-size: 0.825rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-.welcome-visualizer {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  margin-top: 1.5rem;
-  background: rgba(16, 185, 129, 0.03);
-  border: 1px solid rgba(16, 185, 129, 0.1);
-  padding: 1.5rem;
-  border-radius: 16px;
-  backdrop-filter: blur(8px);
-  max-width: 500px;
-}
-
-@media (max-width: 1024px) {
-  .welcome-visualizer {
-    margin: 1.5rem auto 0 auto;
-  }
 }
 
 @media (max-width: 640px) {
-  .welcome-visualizer {
+  .estimator-output {
     flex-direction: column;
     text-align: center;
-    gap: 1rem;
+    gap: 1.25rem;
   }
 }
 
-.visualizer-graphic {
+.output-dial {
   position: relative;
-  width: 80px;
-  height: 80px;
+  width: 90px;
+  height: 90px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.visualizer-circle {
+.output-dial-circle {
   position: absolute;
   width: 100%;
   height: 100%;
-  border: 4px solid rgba(255, 255, 255, 0.03);
-  border-top: 4px solid var(--primary);
-  border-right: 4px solid var(--color-energy);
-  border-bottom: 4px solid var(--color-food);
+  border: 5px solid rgba(255, 255, 255, 0.03);
+  border-top: 5px solid var(--primary);
   border-radius: 50%;
-  animation: spin 8s linear infinite;
+  animation: spin 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-.visualizer-circle-inner {
-  position: absolute;
-  width: 70%;
-  height: 70%;
-  border: 3px solid rgba(255, 255, 255, 0.02);
-  border-left: 3px solid var(--color-consumption);
-  border-radius: 50%;
-  animation: spin-reverse 5s linear infinite;
-}
-
-.visualizer-badge {
-  font-size: 1.5rem;
-  animation: pulse-glow 2.5s ease-in-out infinite;
-}
-
-.visualizer-stats {
+.output-dial-inner {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  align-items: center;
+  z-index: 1;
+}
+
+.output-num {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.output-unit {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-top: 0.15rem;
+}
+
+.output-message {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
   text-align: left;
 }
 
-.visualizer-stats .stat-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.visualizer-stats .stat-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.output-message p strong {
+  color: #fff;
 }
 
 .welcome-card-wrapper {
@@ -1000,6 +1024,37 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-size: 0.925rem;
   line-height: 1.6;
 }
+
+.login-portal {
+  border-top: none;
+  background: rgba(10, 15, 30, 0.6) !important;
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 3rem 2.5rem;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+}
+
+.portal-badge {
+  align-self: center;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--color-energy) 100%);
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.25rem;
+}
+
+.portal-footer {
+  font-size: 0.725rem;
+  color: var(--text-muted);
+  margin-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 1rem;
+}
+
 
 @keyframes float-welcome {
   0%, 100% {
