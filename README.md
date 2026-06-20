@@ -1,4 +1,4 @@
-# CarbonIQ — Carbon Footprint Assistant
+# CarbonIQ — Your Carbon Intelligence
 
 **Analyze. Optimize. Reduce.** CarbonIQ is a carbon-awareness decision assistant that helps users understand, track, and reduce their carbon footprint through real-time trip comparisons (Decision Mode) and a full lifestyle audit (Baseline Mode), powered by an explainable sensitivity analysis engine.
 
