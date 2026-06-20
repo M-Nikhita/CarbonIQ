@@ -9,6 +9,33 @@ import RecommendationList from './components/RecommendationList';
 import WhatIfSlider from './components/WhatIfSlider';
 import { api } from './api';
 
+const triviaQuestions = [
+  {
+    q: "Which of these foods produces the highest greenhouse gas emissions per kilogram?",
+    options: [
+      { text: "🐔 Poultry", correct: false, explanation: "Poultry has moderate emissions (~6 kg CO2e/kg), which is much lower than beef." },
+      { text: "🥩 Beef", correct: true, explanation: "Correct! Beef produces up to 60-99 kg CO2e per kg—nearly 10x higher than poultry and 50x higher than tofu due to enteric fermentation (methane) and pasture land requirements." },
+      { text: "🍲 Tofu", correct: false, explanation: "Tofu has very low emissions (~3 kg CO2e/kg). Transitioning from beef to plant proteins cuts dietary impact by up to 90%." }
+    ]
+  },
+  {
+    q: "What percentage of a home's electric carbon footprint is eliminated by switching to a 100% renewable grid provider?",
+    options: [
+      { text: "About 25%", correct: false, explanation: "Switching power sources provides a much larger reduction since fossil fuel generation accounts for the vast majority of grid electricity carbon." },
+      { text: "Around 60%", correct: false, explanation: "We can actually offset almost all of it!" },
+      { text: "Over 90%", correct: true, explanation: "Correct! Sourcing electricity from certified wind, solar, or hydro utility plans eliminates ~92% to 95% of active household electric carbon." }
+    ]
+  },
+  {
+    q: "Per kilometer traveled, which commute method produces the lowest CO2e impact per passenger?",
+    options: [
+      { text: "🚗 Electric Vehicle (EV)", correct: false, explanation: "EVs are excellent (emitting ~50g/km), but single-occupant driving still consumes more energy per person than loaded public transit." },
+      { text: "🚊 Mass Transit Metro / Subway", correct: true, explanation: "Correct! Electric subways and passenger trains emit only ~18-24g CO2e per passenger-kilometer, making them the lowest-impact motorized transit." },
+      { text: "🚌 Local Diesel Bus", correct: false, explanation: "Diesel buses emit ~80-100g/km per passenger, which is higher than a fully electric train or subway." }
+    ]
+  }
+];
+
 function App() {
   // Authentication & Core State
   const [userId, setUserId] = useState('');
@@ -16,10 +43,11 @@ function App() {
   const [appState, setAppState] = useState('welcome'); // 'welcome' | 'dashboard'
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' | 'comparator' | 'history' | 'assistant'
 
-  // Interactive landing page calculator state
-  const [landingTransitMode, setLandingTransitMode] = useState('car');
-  const [landingDistance, setLandingDistance] = useState(120);
-
+  // Interactive landing page Carbon IQ Trivia states
+  const [triviaStep, setTriviaStep] = useState(0); // 0: intro, 1: Q1, 2: Q2, 3: Q3, 4: results
+  const [selectedOptionIndex, setSelectedOptionIndex] = useState(null);
+  const [isAnswered, setIsAnswered] = useState(false);
+  const [triviaScore, setTriviaScore] = useState(0);
 
   // Sessions and History data
   const [sessions, setSessions] = useState([]);
@@ -266,84 +294,143 @@ Please write a short, friendly response answering their question. (Maximum 3 sen
           <div className="welcome-hero">
             <div className="welcome-hero-content">
               <h1 className="welcome-logo">Carbon<span>IQ</span></h1>
-              <p className="welcome-tagline">
-                Your premium carbon intelligence platform. Estimate commute footprints below, or sign in to run complete baseline audits and track lifetime savings.
-              </p>
               
-              {/* Interactive Landing Page Estimator Widget */}
-              <div className="landing-estimator">
-                <div className="estimator-header-row">
-                  <span className="estimator-badge-label">INTERACTIVE PREVIEW</span>
-                  <h3>Quick Commute Estimator</h3>
-                </div>
-                
-                <div className="estimator-inputs">
-                  <div className="form-group">
-                    <label>Select Commute Transport</label>
-                    <div className="transit-btn-group">
-                      {[
-                        { id: 'car', label: '🚗 Car' },
-                        { id: 'bus', label: '🚌 Bus' },
-                        { id: 'train', label: '🚊 Train' },
-                        { id: 'bike', label: '🚲 Active' }
-                      ].map(opt => (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          className={`transit-opt-btn ${landingTransitMode === opt.id ? 'active' : ''}`}
-                          onClick={() => setLandingTransitMode(opt.id)}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
+              {/* Carbon IQ Trivia Widget */}
+              <div className="trivia-widget">
+                {triviaStep === 0 && (
+                  <div className="trivia-step-container trivia-intro">
+                    <span className="trivia-badge">LANDING EXCLUSIVE GAME</span>
+                    <h2>Test Your Carbon IQ! 🧠</h2>
+                    <p className="welcome-tagline" style={{ marginTop: '0.5rem', marginBottom: '1.5rem', fontSize: '1.05rem' }}>
+                      How deep is your climate intelligence? Challenge yourself with our quick 3-question Carbon IQ trivia game before setting up your personal tracker dashboard.
+                    </p>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-start-quiz"
+                      onClick={() => {
+                        setTriviaStep(1);
+                        setTriviaScore(0);
+                        setSelectedOptionIndex(null);
+                        setIsAnswered(false);
+                      }}
+                    >
+                      Start Carbon IQ Challenge 🚀
+                    </button>
                   </div>
+                )}
 
-                  <div className="form-group" style={{ marginTop: '1.25rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                      <label htmlFor="landing-dist-slider">Weekly Distance</label>
-                      <span className="slider-val" style={{ fontWeight: 700, color: 'var(--primary)' }}>
-                        {landingDistance} km / week
-                      </span>
-                    </div>
-                    <input
-                      id="landing-dist-slider"
-                      type="range"
-                      min="0"
-                      max="500"
-                      step="10"
-                      value={landingDistance}
-                      onChange={(e) => setLandingDistance(Number(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                </div>
-
-                {/* Live Footprint Output Dial */}
-                {(() => {
-                  const factors = { car: 0.171, bus: 0.082, train: 0.041, bike: 0.0 };
-                  const co2Kg = landingDistance * 52 * factors[landingTransitMode];
-                  const co2Tons = (co2Kg / 1000).toFixed(2);
-                  const treesToOffset = Math.round(co2Kg / 20);
-
+                {triviaStep >= 1 && triviaStep <= 3 && (() => {
+                  const currentQ = triviaQuestions[triviaStep - 1];
                   return (
-                    <div className="estimator-output">
-                      <div className="output-dial">
-                        <div className="output-dial-circle"></div>
-                        <div className="output-dial-inner">
-                          <span className="output-num">{co2Tons}</span>
-                          <span className="output-unit">Tons CO2e / yr</span>
+                    <div className="trivia-step-container">
+                      <div className="trivia-progress-bar">
+                        <div className="progress-label">Question {triviaStep} of 3</div>
+                        <div className="progress-track">
+                          <div className="progress-fill" style={{ width: `${(triviaStep / 3) * 100}%` }}></div>
                         </div>
                       </div>
-                      <div className="output-message">
-                        <p>Your commute produces approximately <strong>{co2Kg.toLocaleString(undefined, { maximumFractionDigits: 0 })} kg</strong> of CO2 annually.</p>
-                        <p className="equivalence-text" style={{ marginTop: '0.35rem' }}>
-                          🌲 Needs <strong>{treesToOffset} trees</strong> growing for a year to absorb this carbon.
-                        </p>
+                      
+                      <h3 className="trivia-question-text">{currentQ.q}</h3>
+                      
+                      <div className="trivia-options-grid">
+                        {currentQ.options.map((opt, idx) => {
+                          let btnClass = 'trivia-option-btn';
+                          if (isAnswered) {
+                            if (opt.correct) {
+                              btnClass += ' correct';
+                            } else if (idx === selectedOptionIndex) {
+                              btnClass += ' incorrect';
+                            } else {
+                              btnClass += ' disabled';
+                            }
+                          } else if (idx === selectedOptionIndex) {
+                            btnClass += ' selected';
+                          }
+
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              className={btnClass}
+                              disabled={isAnswered}
+                              onClick={() => {
+                                setSelectedOptionIndex(idx);
+                                setIsAnswered(true);
+                                if (opt.correct) {
+                                  setTriviaScore(prev => prev + 1);
+                                }
+                              }}
+                            >
+                              <span className="option-text">{opt.text}</span>
+                            </button>
+                          );
+                        })}
                       </div>
+
+                      {isAnswered && (
+                        <div className="trivia-explanation-box">
+                          <div className="explanation-title">
+                            {currentQ.options[selectedOptionIndex]?.correct ? '🎉 Correct Answer!' : '❌ Incorrect Answer'}
+                          </div>
+                          <p className="explanation-content">
+                            {currentQ.options[selectedOptionIndex]?.explanation || currentQ.options.find(o => o.correct).explanation}
+                          </p>
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            style={{ alignSelf: 'flex-end', marginTop: '0.75rem', padding: '0.5rem 1.25rem' }}
+                            onClick={() => {
+                              setSelectedOptionIndex(null);
+                              setIsAnswered(false);
+                              setTriviaStep(prev => prev + 1);
+                            }}
+                          >
+                            {triviaStep === 3 ? 'Finish & See Score →' : 'Next Question →'}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
+
+                {triviaStep === 4 && (
+                  <div className="trivia-step-container trivia-results-step">
+                    <span className="trivia-badge">CHALLENGE COMPLETE</span>
+                    <h2>Your Carbon IQ Results</h2>
+                    
+                    <div className="score-ring-wrapper">
+                      <div className="score-ring">
+                        <span className="score-value">{triviaScore} / 3</span>
+                        <span className="score-label">Correct</span>
+                      </div>
+                    </div>
+
+                    <div className="score-rank-badge">
+                      {triviaScore === 3 && '🏆 Carbon Genius'}
+                      {triviaScore === 2 && '🌳 Eco Champion'}
+                      {triviaScore <= 1 && '🌱 Climate Explorer'}
+                    </div>
+
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', margin: '1rem 0' }}>
+                      {triviaScore === 3 && 'Perfect score! You possess elite carbon intelligence. You are fully ready to optimize your lifestyle footprint.'}
+                      {triviaScore === 2 && 'Great job! You have solid baseline awareness of footprint magnitudes. Build your full profile to find final reductions.'}
+                      {triviaScore <= 1 && 'Every climate journey starts here. Establishing your baseline metrics in the dashboard will help double your Carbon IQ.'}
+                    </p>
+
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => {
+                          setTriviaStep(0);
+                          setTriviaScore(0);
+                        }}
+                      >
+                        🔄 Retake Quiz
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
