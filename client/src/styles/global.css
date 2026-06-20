@@ -735,12 +735,25 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .welcome-hero {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: 4rem 5rem;
+  justify-content: flex-start;
+  padding: 3rem 5rem;
   border-right: 1px solid var(--border-glass);
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
   text-align: left;
+}
+
+.welcome-hero::-webkit-scrollbar {
+  width: 6px;
+}
+
+.welcome-hero::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.welcome-hero::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
 }
 
 @media (max-width: 1024px) {
@@ -1241,6 +1254,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding: 3rem 2rem;
   background: rgba(8, 12, 20, 0.2);
   border-left: 1px solid var(--border-glass);
+  overflow-y: auto;
 }
 
 @media (max-width: 1024px) {

@@ -59,7 +59,6 @@ function App() {
 
   // Landing page interactive carbon telemetry and hotspot scanner
   const [activeHotspot, setActiveHotspot] = useState('commute');
-  const [globalEmissions, setGlobalEmissions] = useState(0);
 
 
   // Sessions and History data
@@ -96,21 +95,7 @@ function App() {
     }
   }, []);
 
-  // Background carbon emissions odometer ticker (global live telemetry)
-  useEffect(() => {
-    const now = new Date();
-    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const msSinceMidnight = now.getTime() - midnight.getTime();
-    // Global emissions average roughly 37 billion tons per year, which is ~1,170,000 kg per second
-    const initialVal = (msSinceMidnight / 1000) * 1170000;
-    setGlobalEmissions(initialVal);
 
-    const interval = setInterval(() => {
-      setGlobalEmissions(prev => prev + 11.7); // 1,170,000 kg/sec -> 11.7 kg every 10ms
-    }, 10);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const handleStartTriviaView = () => {
     const shuffled = [...triviaQuestions].sort(() => 0.5 - Math.random());
@@ -343,9 +328,7 @@ Please write a short, friendly response answering their question. (Maximum 3 sen
               {/* Real-time Global Carbon Odometer Ticker */}
               <div className="live-odometer-box" aria-live="polite">
                 <div className="odometer-title">GLOBAL EMISSIONS DETECTED TODAY</div>
-                <div className="odometer-digits">
-                  {globalEmissions.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="odometer-unit-badge">KG CO2e</span>
-                </div>
+                <EmissionsOdometer />
                 <div className="odometer-footer">
                   <span className="live-dot" aria-hidden="true"></span> Telemetry ticking in real-time at ~1,170,000 kg / second worldwide.
                 </div>
@@ -938,6 +921,30 @@ Please write a short, friendly response answering their question. (Maximum 3 sen
           </main>
         </>
       )}
+    </div>
+  );
+}
+
+function EmissionsOdometer() {
+  const [emissions, setEmissions] = useState(0);
+
+  useEffect(() => {
+    const now = new Date();
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const msSinceMidnight = now.getTime() - midnight.getTime();
+    const initialVal = (msSinceMidnight / 1000) * 1170000;
+    setEmissions(initialVal);
+
+    const interval = setInterval(() => {
+      setEmissions(prev => prev + 117); // 1,170,000 kg/sec -> 117 kg every 100ms
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="odometer-digits">
+      {emissions.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="odometer-unit-badge">KG CO2e</span>
     </div>
   );
 }
