@@ -255,31 +255,84 @@ Please write a short, friendly response answering their question. (Maximum 3 sen
   };
 
   return (
-    <div className="app-container" role="main">
+    <div className={`app-container ${appState === 'welcome' ? 'welcome-mode' : ''}`} role="main">
       {appState === 'welcome' ? (
-        <div style={{ display: 'flex', width: '100%', height: '100%' }}>
-          <div className="welcome-card">
-            <div className="icon" aria-hidden="true">🌱</div>
-            <h2>CarbonIQ</h2>
-            <p>
-              Your smart carbon intelligence dashboard. Analyze your lifestyle baseline, compare trip emissions, and track your lifetime savings.
-            </p>
-            <form onSubmit={handleWelcomeSubmit} style={{ marginTop: '1rem', width: '100%' }}>
-              <div className="form-group" style={{ textAlign: 'left' }}>
-                <label htmlFor="username-input">Enter your name or identifier</label>
-                <input
-                  id="username-input"
-                  type="text"
-                  value={userNameInput}
-                  onChange={(e) => setUserNameInput(e.target.value)}
-                  placeholder="e.g. Alex"
-                  required
-                />
+        <div className="welcome-grid">
+          <div className="welcome-hero">
+            <div className="welcome-hero-content">
+              <h1 className="welcome-logo">Carbon<span>IQ</span></h1>
+              <p className="welcome-tagline">
+                Your premium carbon intelligence platform. Analyze your lifestyle baseline, compare trip footprints, simulate reductions, and track lifetime savings.
+              </p>
+              
+              <div className="welcome-features" role="list">
+                <div className="welcome-feature-card" role="listitem">
+                  <span className="welcome-feature-icon" aria-hidden="true">📊</span>
+                  <h2 className="welcome-feature-title">Profile Auditing</h2>
+                  <p className="welcome-feature-desc">Establish your carbon emissions baseline using tailored lifestyle metrics.</p>
+                </div>
+                <div className="welcome-feature-card" role="listitem">
+                  <span className="welcome-feature-icon" aria-hidden="true">🚗</span>
+                  <h2 className="welcome-feature-title">Trip Comparator</h2>
+                  <p className="welcome-feature-desc">Compare transport options by actual travel distances to make green transit choices.</p>
+                </div>
+                <div className="welcome-feature-card" role="listitem">
+                  <span className="welcome-feature-icon" aria-hidden="true">💡</span>
+                  <h2 className="welcome-feature-title">What-If Simulator</h2>
+                  <p className="welcome-feature-desc">Model changes to your daily commute habits and see real-time footprint shifts.</p>
+                </div>
+                <div className="welcome-feature-card" role="listitem">
+                  <span className="welcome-feature-icon" aria-hidden="true">💬</span>
+                  <h2 className="welcome-feature-title">Gemini AI Advisor</h2>
+                  <p className="welcome-feature-desc">Get personalized, actionable suggestions to tackle your high-impact carbon categories.</p>
+                </div>
               </div>
-              <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-                Launch Dashboard
-              </button>
-            </form>
+
+              <div className="welcome-visualizer">
+                <div className="visualizer-graphic">
+                  <div className="visualizer-circle"></div>
+                  <div className="visualizer-circle-inner"></div>
+                  <div className="visualizer-badge" aria-hidden="true">🌱</div>
+                </div>
+                <div className="visualizer-stats">
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.25rem', color: '#fff' }}>CarbonIQ Active Metrics</div>
+                  <div className="stat-row">
+                    <span className="stat-dot" style={{ backgroundColor: 'var(--color-transport)' }}></span>
+                    <span style={{ color: 'var(--text-muted)' }}>Transport:</span> <span>3.2 tons CO2e avg</span>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-dot" style={{ backgroundColor: 'var(--color-energy)' }}></span>
+                    <span style={{ color: 'var(--text-muted)' }}>Home Energy:</span> <span>2.8 tons CO2e avg</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="welcome-card-wrapper">
+            <div className="welcome-card" style={{ margin: 0, width: '100%' }}>
+              <div className="icon" aria-hidden="true">🔒</div>
+              <h2>Launch Dashboard</h2>
+              <p>
+                Enter your identifier to load your profile, track committed decisions, and view your stats.
+              </p>
+              <form onSubmit={handleWelcomeSubmit} style={{ marginTop: '1rem', width: '100%' }}>
+                <div className="form-group" style={{ textAlign: 'left' }}>
+                  <label htmlFor="username-input">Enter your name or identifier</label>
+                  <input
+                    id="username-input"
+                    type="text"
+                    value={userNameInput}
+                    onChange={(e) => setUserNameInput(e.target.value)}
+                    placeholder="e.g. Alex"
+                    required
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+                  Launch Dashboard
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       ) : (
