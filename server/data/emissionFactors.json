@@ -1,0 +1,64 @@
+{
+  "_meta": {
+    "description": "Emission factors used by the calculation engine. Values are approximate global averages compiled from EPA, IPCC, and Our World in Data sources, intended for educational/awareness purposes rather than precise carbon accounting.",
+    "unit": "kgCO2e",
+    "lastUpdated": "2026"
+  },
+  "transport": {
+    "car": {
+      "petrol": { "perKm": 0.192 },
+      "diesel": { "perKm": 0.171 },
+      "electric": { "perKm": 0.053 },
+      "hybrid": { "perKm": 0.106 }
+    },
+    "motorbike": { "perKm": 0.103 },
+    "publicTransit": {
+      "bus": { "perKm": 0.105 },
+      "train": { "perKm": 0.041 },
+      "metro": { "perKm": 0.028 }
+    },
+    "bicycle": { "perKm": 0 },
+    "walk": { "perKm": 0 },
+    "flight": {
+      "shortHaul": { "perKm": 0.255, "avgTripKm": 800 },
+      "longHaul": { "perKm": 0.195, "avgTripKm": 6000 }
+    }
+  },
+  "energy": {
+    "electricityPerKwh": 0.475,
+    "renewableOffsetFactor": 0.92,
+    "avgHouseholdKwhPerPersonPerMonth": 90
+  },
+  "food": {
+    "dietAnnualCO2e": {
+      "meatHeavy": 3300,
+      "moderateMeat": 2500,
+      "vegetarian": 1700,
+      "vegan": 1500
+    },
+    "foodWastePenaltyFactor": {
+      "high": 1.25,
+      "moderate": 1.1,
+      "low": 1.0
+    }
+  },
+  "consumption": {
+    "shoppingFrequencyAnnualCO2e": {
+      "frequent": 900,
+      "moderate": 500,
+      "minimal": 200
+    },
+    "flightsPerYearAvgCO2e": {
+      "0": 0,
+      "1-2": 600,
+      "3-5": 1800,
+      "6+": 4000
+    }
+  },
+  "benchmarks": {
+    "globalAveragePerYear": 4700,
+    "indiaAveragePerYear": 1900,
+    "parisAgreementTargetPerYear": 2000,
+    "usAveragePerYear": 14700
+  }
+}

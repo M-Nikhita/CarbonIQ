@@ -1,0 +1,10 @@
+{
+  "_meta": {
+    "description": "Approximate equivalences to make kgCO2e figures relatable. Educational use only.",
+    "unit": "kgCO2e"
+  },
+  "treeMonthsToAbsorb": { "perKg": 0.0545 },
+  "smartphoneCharges": { "perKg": 121.95 },
+  "kmDrivenPetrolCar": { "perKg": 5.2 },
+  "ledBulbHoursVsIncandescent": { "perKg": 153.8 }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "carboniq-server",
+  "version": "1.0.0",
+  "description": "CarbonIQ Express Backend Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node engine/calculator.test.js && node engine/comparator.test.js && node engine/explainer.test.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}
