@@ -6,7 +6,7 @@ function getHeuristicFallback(message, baselineResult) {
   
   // 1. Parse distance numbers
   let distance = 0;
-  const numMatch = query.match(/\b\d+(\.\d+)?\b/);
+  const numMatch = query.match(/\b\d+(\.\d+)?/);
   if (numMatch) {
     distance = parseFloat(numMatch[0]);
   }
