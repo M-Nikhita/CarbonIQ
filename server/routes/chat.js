@@ -16,7 +16,21 @@ function getHeuristicFallback(message, baselineResult) {
     return "Hi there! I am CarbonIQ, your carbon intelligence assistant. Ask me about your baseline footprint, trip offsets, diet choices, or home energy reduction.";
   }
 
-  // 3. Trip Comparator and travel comparisons (e.g. flight, train, car)
+  // 3. Personalized footprint contributors
+  if (query.includes('my') && (query.includes('contributor') || query.includes('biggest') || query.includes('highest') || query.includes('footprint') || query.includes('most'))) {
+    if (baselineResult && baselineResult.grandTotal !== undefined) {
+      const grandTotal = baselineResult.grandTotal;
+      const ranked = baselineResult.ranked || [];
+      if (ranked.length > 0) {
+        const top = ranked[0];
+        const percent = Math.round((top.total / grandTotal) * 100);
+        return `Based on your baseline audit, your biggest carbon contributor is ${top.label.toUpperCase()} emitting ${top.total.toLocaleString()} kg CO2e annually (${percent}% of your grand total: ${grandTotal.toLocaleString()} kg). You can find suggestions to reduce this under the advisor panel on your Dashboard.`;
+      }
+    }
+    return "To see your biggest carbon contributors, please complete your baseline audit in the Dashboard tab! Generally, driving gasoline vehicles and eating high-meat diets are the largest contributors for most individuals.";
+  }
+
+  // 4. Trip Comparator and travel comparisons (e.g. flight, train, car)
   if (query.includes('train') || query.includes('car') || query.includes('fly') || query.includes('flight') || query.includes('travel') || query.includes('commute') || query.includes('driving')) {
     if (distance > 0) {
       const carEmissions = Math.round(distance * 0.171);
@@ -31,20 +45,6 @@ function getHeuristicFallback(message, baselineResult) {
       return `For a ${distance} km trip, driving a petrol car emits around ${carEmissions} kg CO2e, whereas taking the train emits only ${trainEmissions} kg CO2e. By choosing the train, you save ${savings} kg CO2e, cutting emissions by over 85%.`;
     }
     return "Commuting by petrol car emits about 171g CO2e/km, whereas a train emits only 20g/km. You can compare specific trip distances using the Trip Comparator tab to see exact savings.";
-  }
-
-  // 4. Personalized footprint contributors
-  if (query.includes('my') && (query.includes('contributor') || query.includes('biggest') || query.includes('highest') || query.includes('footprint') || query.includes('most'))) {
-    if (baselineResult && baselineResult.grandTotal !== undefined) {
-      const grandTotal = baselineResult.grandTotal;
-      const ranked = baselineResult.ranked || [];
-      if (ranked.length > 0) {
-        const top = ranked[0];
-        const percent = Math.round((top.total / grandTotal) * 100);
-        return `Based on your baseline audit, your biggest carbon contributor is ${top.label.toUpperCase()} emitting ${top.total.toLocaleString()} kg CO2e annually (${percent}% of your grand total: ${grandTotal.toLocaleString()} kg). You can find suggestions to reduce this under the advisor panel on your Dashboard.`;
-      }
-    }
-    return "To see your biggest carbon contributors, please complete your baseline audit in the Dashboard tab! Generally, driving gasoline vehicles and eating high-meat diets are the largest contributors for most individuals.";
   }
 
   // 5. Diet and food
