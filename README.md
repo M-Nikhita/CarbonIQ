@@ -31,7 +31,7 @@ CarbonIQ is structured as a single-thread chat assistant. Every interaction (for
 * **Decision Mode:** Allows users to input travel distance and select modes (e.g., petrol car, electric car, bus, train, metro, flight). It uses precise emission factors to compare choices, show carbon savings, and translate savings into intuitive equivalences (e.g., phone charges).
 * **Baseline Mode:** Guides the user through a quick 8-question audit of their lifestyle. It returns visual ranked category bars, benchmarks the grand total against global averages, and prioritized top actions.
 * **Explainability Layer:** Runs sensitivity analysis on calculation inputs. By perturbing numeric factors by +10%, it calculates the percentage shift in output to reveal the primary driver of the user's emissions.
-* **Gemini Advisor Routing:** Synthesizes footprint data and recommendations using Gemini API (`gemini-2.0-flash`) with strict constraints to prevent hallucination. If no API key is provided, the platform degrades gracefully to a robust rule-based templating advisor.
+* **Gemini Advisor & Chat Routing:** Synthesizes footprint data using the Gemini API (`gemini-2.0-flash`) and processes conversational queries in the AI Assistant. If the Gemini API key is missing or rate-limited, the platform gracefully degrades to a robust rule-based templating advisor and a local NLP heuristic chat engine.
 
 ### Architecture Diagram
 
@@ -97,7 +97,7 @@ cp .env.example .env
 # Optionally edit .env to insert your GEMINI_API_KEY
 npm start
 ```
-*Note: If the `GEMINI_API_KEY` is blank, the app will degrade gracefully to rule-based advice.*
+*Note: If the `GEMINI_API_KEY` is blank or rate-limited, the app will degrade gracefully to rule-based advice and a local NLP heuristic chat engine.*
 
 ### 2. Setup Frontend Client
 In a separate terminal:
