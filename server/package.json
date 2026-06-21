@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node engine/calculator.test.js && node engine/comparator.test.js && node engine/explainer.test.js"
+    "test": "node engine/calculator.test.js && node engine/comparator.test.js && node engine/explainer.test.js && node routes/routes.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

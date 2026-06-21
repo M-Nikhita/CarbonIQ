@@ -104,8 +104,11 @@ try {
     $proc = Start-Process -FilePath 'node' -ArgumentList 'server/engine/explainer.test.js' -NoNewWindow -PassThru -Wait
     $expPass = ($proc.ExitCode -eq 0)
 
-    $testsPassed = ($calcPass -and $compPass -and $expPass)
-    Print-Check -text 'All logical calculation engine tests pass successfully' -success $testsPassed
+    $proc = Start-Process -FilePath 'node' -ArgumentList 'server/routes/routes.test.js' -NoNewWindow -PassThru -Wait
+    $routesPass = ($proc.ExitCode -eq 0)
+
+    $testsPassed = ($calcPass -and $compPass -and $expPass -and $routesPass)
+    Print-Check -text 'All logical calculation engine and API route tests pass successfully' -success $testsPassed
 } catch {
     Print-Check -text 'Failed to execute node unit tests' -success $false
 }

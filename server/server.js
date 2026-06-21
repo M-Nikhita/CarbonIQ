@@ -38,14 +38,18 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`==================================================`);
-  console.log(`CarbonIQ Server is running on port ${PORT}`);
-  
-  if (process.env.GEMINI_API_KEY) {
-    console.log(`Gemini integration: ENABLED (found GEMINI_API_KEY)`);
-  } else {
-    console.log(`Gemini integration: DISABLED (set GEMINI_API_KEY in .env to enable)`);
-  }
-  console.log(`==================================================`);
-});
+module.exports = app;
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`==================================================`);
+    console.log(`CarbonIQ Server is running on port ${PORT}`);
+    
+    if (process.env.GEMINI_API_KEY) {
+      console.log(`Gemini integration: ENABLED (found GEMINI_API_KEY)`);
+    } else {
+      console.log(`Gemini integration: DISABLED (set GEMINI_API_KEY in .env to enable)`);
+    }
+    console.log(`==================================================`);
+  });
+}

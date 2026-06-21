@@ -6,7 +6,7 @@ const crypto = require('crypto');
 
 const sessionsFilePath = path.join(__dirname, '../data/sessions.json');
 
-// Helper helper to load sessions from the JSON file
+// Helper to load sessions from the JSON file
 async function loadSessions() {
   try {
     const data = await fs.readFile(sessionsFilePath, 'utf8');

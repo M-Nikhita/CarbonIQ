@@ -42,6 +42,7 @@ function App() {
   const [userNameInput, setUserNameInput] = useState('');
   const [appState, setAppState] = useState('welcome'); // 'welcome' | 'dashboard'
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' | 'comparator' | 'history' | 'assistant'
+  const [loggingIn, setLoggingIn] = useState(false);
 
   // Interactive landing page Carbon IQ Trivia states (moved inside dashboard)
   const [triviaStep, setTriviaStep] = useState(0);
@@ -143,22 +144,31 @@ function App() {
     const trimmedName = userNameInput.trim();
     if (!trimmedName) return;
 
-    userIdRef.current = trimmedName;
-    setUserId(trimmedName);
-    localStorage.setItem('carboniq_user', trimmedName);
-    setAppState('dashboard');
-    setCurrentView('dashboard');
+    setLoggingIn(true);
+    try {
+      // Warm up API and load user sessions first to verify connection
+      await loadUserData(trimmedName);
 
-    await loadUserData(trimmedName);
+      userIdRef.current = trimmedName;
+      setUserId(trimmedName);
+      localStorage.setItem('carboniq_user', trimmedName);
+      setAppState('dashboard');
+      setCurrentView('dashboard');
 
-    // Initial assistant greeting
-    setMessages([
-      {
-        id: '1',
-        role: 'assistant',
-        text: `Hello ${trimmedName}! I am CarbonIQ, your carbon intelligence assistant. How can I help you analyze or reduce your footprint today?`
-      }
-    ]);
+      // Initial assistant greeting
+      setMessages([
+        {
+          id: '1',
+          role: 'assistant',
+          text: `Hello ${trimmedName}! I am CarbonIQ, your carbon intelligence assistant. How can I help you analyze or reduce your footprint today?`
+        }
+      ]);
+    } catch (err) {
+      console.error('Welcome submit connection error:', err);
+      alert('Connecting to CarbonIQ engine failed. Please verify your network connection and try again.');
+    } finally {
+      setLoggingIn(false);
+    }
   };
 
   // Reset User Session
@@ -445,11 +455,17 @@ function App() {
                     value={userNameInput}
                     onChange={(e) => setUserNameInput(e.target.value)}
                     placeholder="e.g. Alex"
+                    disabled={loggingIn}
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.85rem' }}>
-                  Enter Dashboard →
+                <button 
+                  type="submit" 
+                  className="btn btn-primary" 
+                  style={{ width: '100%', padding: '0.85rem' }}
+                  disabled={loggingIn}
+                >
+                  {loggingIn ? 'Connecting to CarbonIQ Engine...' : 'Enter Dashboard →'}
                 </button>
               </form>
               <div className="portal-footer">

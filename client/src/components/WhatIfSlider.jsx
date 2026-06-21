@@ -14,6 +14,13 @@ function WhatIfSlider({ initialAnswers, initialGrandTotal }) {
   const mode = initialAnswers.transport?.mode;
   const isVehicleCommute = ['car', 'motorbike', 'publicTransit'].includes(mode);
 
+  // Prop-synchronization effect for when baseline data gets updated/re-audited
+  useEffect(() => {
+    setAnswers(initialAnswers);
+    setWeeklyKm(initialAnswers.transport?.weeklyKm || 0);
+    setGrandTotal(initialGrandTotal);
+  }, [initialAnswers, initialGrandTotal]);
+
   useEffect(() => {
     // Only run if the user has a vehicle commute
     if (!isVehicleCommute) return;
@@ -23,10 +30,9 @@ function WhatIfSlider({ initialAnswers, initialGrandTotal }) {
       clearTimeout(timeoutRef.current);
     }
 
-    setLoading(true);
-
     // Debounce the API call by 250ms
     timeoutRef.current = setTimeout(async () => {
+      setLoading(true);
       try {
         const updatedAnswers = {
           ...answers,
