@@ -44,11 +44,7 @@ function App() {
   const [currentView, setCurrentView] = useState('dashboard'); // 'dashboard' | 'comparator' | 'history' | 'assistant'
   const [loggingIn, setLoggingIn] = useState(false);
 
-  // Interactive landing page Carbon IQ Trivia states (moved inside dashboard)
-  const [triviaStep, setTriviaStep] = useState(0);
-  const [selectedOptionIndex, setSelectedOptionIndex] = useState(null);
-  const [isAnswered, setIsAnswered] = useState(false);
-  const [triviaScore, setTriviaScore] = useState(0);
+
 
   // Expanded Dashboard Trivia states
   const [activeTriviaQuestions, setActiveTriviaQuestions] = useState([]);

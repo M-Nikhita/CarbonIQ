@@ -6,19 +6,28 @@ const crypto = require('crypto');
 
 const sessionsFilePath = path.join(__dirname, '../data/sessions.json');
 
+// In-memory cache
+let dbCache = null;
+
 // Helper to load sessions from the JSON file
 async function loadSessions() {
+  if (dbCache !== null) {
+    return dbCache;
+  }
   try {
     const data = await fs.readFile(sessionsFilePath, 'utf8');
-    return JSON.parse(data);
+    dbCache = JSON.parse(data);
+    return dbCache;
   } catch (error) {
     // If the file doesn't exist or is corrupted, return a seed template
-    return { sessions: [] };
+    dbCache = { sessions: [] };
+    return dbCache;
   }
 }
 
 // Helper to save sessions to the JSON file
 async function saveSessions(data) {
+  dbCache = data;
   await fs.writeFile(sessionsFilePath, JSON.stringify(data, null, 2), 'utf8');
 }
 
