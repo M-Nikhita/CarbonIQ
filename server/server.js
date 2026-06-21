@@ -7,6 +7,7 @@ const adviceRoute = require('./routes/advice');
 const decisionRoute = require('./routes/decision');
 const explainRoute = require('./routes/explain');
 const sessionsRoute = require('./routes/sessions');
+const chatRoute = require('./routes/chat');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use('/api/advice', adviceRoute);
 app.use('/api/decision', decisionRoute);
 app.use('/api/explain', explainRoute);
 app.use('/api/sessions', sessionsRoute);
+app.use('/api/chat', chatRoute);
 
 // Simple health check
 app.get('/health', (req, res) => {

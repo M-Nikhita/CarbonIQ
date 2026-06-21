@@ -65,5 +65,13 @@ export const api = {
     return request(`/sessions/${encodeURIComponent(sessionId)}/commit`, {
       method: 'PATCH'
     });
+  },
+
+  chat: (message, userId, baselineResult) => {
+    return request('/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message, userId, baselineResult })
+    });
   }
 };
+

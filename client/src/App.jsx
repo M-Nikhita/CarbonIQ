@@ -262,46 +262,12 @@ function App() {
     setAssistantLoading(true);
 
     try {
-      // Prompt constructed with context
-      const baselineStr = activeBaselineResult 
-        ? `User's baseline emissions: ${activeBaselineResult.grandTotal} kg CO2e.`
-        : 'User has not completed their baseline audit yet.';
-
-      const prompt = `
-You are CarbonIQ, an expert CleanTech carbon-reduction assistant. 
-Context:
-- User: ${userIdRef.current}
-- ${baselineStr}
-
-User asks: "${query}"
-Please write a short, friendly response answering their question. (Maximum 3 sentences). Plain text only, no markdown formatting.
-`;
-
-      const apiKey = process.env.GEMINI_API_KEY; // Wait, frontend runs in browser, can't read process.env.GEMINI_API_KEY directly
-      // But wait! We can hit our backend advice route, or just mock it. Let's send it to the backend route or create a generic assistant response:
-      // Since we want to make it smart, let's fetch advice from /api/advice or just use rule-based answers
-      let responseText = '';
-      if (query.toLowerCase().includes('hello') || query.toLowerCase().includes('hi')) {
-        responseText = `Hi there! I'm here to help you reduce your carbon footprint. You can audit your profile in the Dashboard tab or compare trips in the Trip Comparator.`;
-      } else if (query.toLowerCase().includes('trip') || query.toLowerCase().includes('travel') || query.toLowerCase().includes('car')) {
-        responseText = `To reduce travel emissions, consider public transit like trains or metro, which emit up to 80% less carbon than petrol cars per kilometer.`;
-      } else if (query.toLowerCase().includes('diet') || query.toLowerCase().includes('meat') || query.toLowerCase().includes('food')) {
-        responseText = `Adopting a plant-based or vegetarian diet can cut your dietary emissions in half compared to meat-heavy lifestyles. Meal planning also reduces food waste penalties.`;
-      } else if (query.toLowerCase().includes('energy') || query.toLowerCase().includes('electricity') || query.toLowerCase().includes('solar')) {
-        responseText = `Switching to a 100% renewable grid provider or installing solar panels eliminates 92% of residential home energy carbon emissions.`;
-      } else {
-        responseText = `Every small sustainability change you make builds momentum. Try auditing your profile or logging trip choices to see your savings grow!`;
-      }
-
-      // If they ask a general question, simulate a short delay for premium feel
-      setTimeout(() => {
-        addMessage('assistant', responseText);
-        setAssistantLoading(false);
-      }, 500);
-
+      const data = await api.chat(query, userIdRef.current, activeBaselineResult);
+      addMessage('assistant', data.reply);
     } catch (err) {
-      console.error(err);
-      addMessage('assistant', 'Sorry, I encountered an error processing that question.');
+      console.error('Chat error:', err);
+      addMessage('assistant', "I'm not able to reach my AI assistant right now, but you can get a precise answer using Decision Mode or Baseline Mode above.");
+    } finally {
       setAssistantLoading(false);
     }
   };
